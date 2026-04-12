@@ -1,7 +1,7 @@
 # SafeBite - Food Ingredient Analyzer
 
 ## 1. Project Overview
-SafeBite AI is a mobile application designed to help users understand food labels instantly. By using the smartphone camera, the app scans ingredient lists, identifies harmful additives (E-numbers), and alerts users about potential allergens or health risks based on their personal profiles.
+SafeBite is a mobile application designed to help users understand food labels instantly. By using the smartphone camera, the app scans ingredient lists, identifies harmful additives (E-numbers), and alerts users about potential allergens or health risks based on their personal profiles.
 
 ### Target Users:
 - People with food allergies (Peanut, Lactose, Gluten, etc.).
@@ -21,7 +21,7 @@ SafeBite AI is a mobile application designed to help users understand food label
 ## 3. Technology Stack
 - **Frontend:** Flutter (Dart)
 - **OCR Engine:** Google ML Kit (On-device)
-- **AI Analysis:** Google Gemini API / TensorFlow Lite
+- **AI Analysis:** TensorFlow Lite
 - **Backend & DB:** Firebase (Authentication & Firestore)
 - **Design:** Figma
 
@@ -30,10 +30,10 @@ SafeBite AI is a mobile application designed to help users understand food label
 ## 4. Team Members & Roles
 | Name | Role | Primary Tasks |
 | :--- | :--- | :--- |
-| **Member A** | Project Manager & Frontend | Flutter Architecture, Camera & ML Kit Integration |
-| **Member B** | AI Specialist | Data Collection, AI Prompt Engineering/Training |
-| **Member C** | Backend Developer | Firebase Setup, API Integration, User Data Management |
-| **Member D** | UI/UX & QA | Design Wireframes, Testing, Documentation |
+| **Duy** | Frontend | Flutter Architecture, Camera & ML Kit Integration |
+| **Huy** | Project Manager & AI Specialist | Data Collection, AI Training |
+| **Hoang** | Backend Developer | Firebase Setup, API Integration, User Data Management |
+| **Dat** | UI/UX & QA | Design Wireframes, Testing, Documentation |
 
 ---
 
@@ -68,6 +68,6 @@ SafeBite AI is a mobile application designed to help users understand food label
 ---
 
 ## 7. Communication Plan
-- **Primary Tools:** Discord (Weekly Meetings), Messenger (Daily Chat).
+- **Primary Tools:** Google Meet (Weekly Meetings), Messenger (Daily Chat).
 - **Task Management:** GitHub Projects (Kanban Board).
 - **Meeting Frequency:** Twice a week (Tuesday & Saturday).
