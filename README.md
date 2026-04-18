@@ -39,7 +39,7 @@ SafeBite is a mobile application designed to help users understand food labels i
 
 ## 5. Work Breakdown Structure (WBS) - Semester Timeline
 
-### Week 1: Initialization (Current)
+### Week 1: Initialization 
 - Project proposal & Team alignment.
 - Tech stack selection & GitHub setup.
 - Initial UI/UX Wireframes.
