@@ -28,7 +28,7 @@ class AIService {
     }
   }
 
-  // 2. Hàm dự đoán (Hàm Duy sẽ gọi)
+  // 2. Hàm dự đoán 
   String predict(String text) {
     if (_interpreter == null || _vocab == null || _labels == null) return "Unknown";
 
