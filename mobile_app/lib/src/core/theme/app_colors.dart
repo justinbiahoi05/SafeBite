@@ -19,6 +19,11 @@ class AppColors {
   static const Color gradientIntermediate = Color(0xFF0D1F16);
   static const Color blackSoft = Color(0xFF050A07);
   static const Color darkGreen = Color(0xFF040A06);
+  static const Color forestGreen = Color(0xFF04542C);
+  static const Color grayLight = Color(0xFFEFEFEF);
+  static const Color scaffoldBackgroundLight = Color(0xFFF1F4F2);
+
+
 
   static const List<Color> mainGradient = [background, gradientIntermediate];
   static const List<Color> authGradient = [gradientDark, background];

@@ -7,45 +7,21 @@ class DashboardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFFF9FBF9), // Match background in screenshot
-      ),
+      decoration: const BoxDecoration(color: AppColors.scaffoldBackgroundLight),
+
       child: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // User Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 20,
-                        backgroundColor: Colors.grey.shade200,
-                        backgroundImage: const NetworkImage('https://i.pravatar.cc/150?u=safebite'), // Placeholder
-                      ),
-                      const SizedBox(width: 12),
-                      const Text(
-                        'SafeBite',
-                        style: TextStyle(
-                          color: Color(0xFF1A1A1A),
-                          fontWeight: FontWeight.w900,
-                          fontSize: 18,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const Icon(Icons.history_rounded, color: Colors.black54),
-                ],
-              ),
               const SizedBox(height: 32),
 
-              // Daily Report Header
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.accent.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(100),
@@ -67,7 +43,8 @@ class DashboardPage extends StatelessWidget {
                     fontSize: 34,
                     height: 1.1,
                     fontWeight: FontWeight.w900,
-                    color: Color(0xFF1A1A1A),
+                    color: AppColors.textPrimary,
+
                     fontFamily: 'Outfit',
                   ),
                   children: [
@@ -83,23 +60,20 @@ class DashboardPage extends StatelessWidget {
               const Text(
                 "Today's intake shows 92% purity. Your gut health is thriving in the optimal greenhouse zone.",
                 style: TextStyle(
-                  color: Color(0xFF666666),
+                  color: AppColors.textSecondary,
+
                   fontSize: 14,
                   height: 1.5,
                   fontWeight: FontWeight.w500,
                 ),
               ),
               const SizedBox(height: 24),
-
-              // Safety Score Card
               _SafetyScoreCard(),
               const SizedBox(height: 24),
 
-              // Ingredients Analyzed Card
               _IngredientsAnalyzedCard(),
               const SizedBox(height: 24),
 
-              // Stats Row
               Row(
                 children: [
                   Expanded(
@@ -107,7 +81,8 @@ class DashboardPage extends StatelessWidget {
                       value: '84%',
                       label: 'SUGAR-FREE STREAK',
                       icon: Icons.show_chart_rounded,
-                      color: const Color(0xFF04542C),
+                      color: AppColors.forestGreen,
+
                       textColor: Colors.white,
                     ),
                   ),
@@ -117,15 +92,16 @@ class DashboardPage extends StatelessWidget {
                       value: '12',
                       label: 'SMART TIPS',
                       icon: Icons.wb_incandescent_outlined,
-                      color: const Color(0xFFEFEFEF),
-                      textColor: const Color(0xFF1A1A1A),
+                      color: AppColors.grayLight,
+
+                      textColor: AppColors.textPrimary,
+
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 32),
 
-              // Recent Scans Header
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -134,7 +110,8 @@ class DashboardPage extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w900,
-                      color: Color(0xFF1A1A1A),
+                      color: AppColors.textPrimary,
+
                     ),
                   ),
                   TextButton(
@@ -142,7 +119,8 @@ class DashboardPage extends StatelessWidget {
                     child: const Text(
                       'View Archive',
                       style: TextStyle(
-                        color: Color(0xFF04542C),
+                        color: AppColors.forestGreen,
+
                         fontWeight: FontWeight.w700,
                         fontSize: 12,
                       ),
@@ -151,7 +129,6 @@ class DashboardPage extends StatelessWidget {
                 ],
               ),
 
-              // Recent Scans List
               _RecentScanItem(
                 name: 'Hass Avocado',
                 time: '2 hours ago',
@@ -173,8 +150,6 @@ class DashboardPage extends StatelessWidget {
                 icon: Icons.warning_amber_rounded,
                 isSafe: false,
               ),
-
-              const SizedBox(height: 120), // Padding for Bottom Navigation Bar
             ],
           ),
         ),
@@ -198,13 +173,18 @@ class _SafetyScoreCard extends StatelessWidget {
             width: 50,
             height: 50,
             decoration: const BoxDecoration(
-              color: Color(0xFF04542C),
+              color: AppColors.forestGreen,
+
               shape: BoxShape.circle,
             ),
             alignment: Alignment.center,
             child: const Text(
               '92',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 18),
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+                fontSize: 18,
+              ),
             ),
           ),
           const SizedBox(width: 16),
@@ -213,11 +193,20 @@ class _SafetyScoreCard extends StatelessWidget {
             children: [
               Text(
                 'SAFETY SCORE',
-                style: TextStyle(color: Colors.black26, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 0.5),
+                style: TextStyle(
+                  color: Colors.black26,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 0.5,
+                ),
               ),
               Text(
                 'Excellent',
-                style: TextStyle(color: Color(0xFF1A1A1A), fontSize: 18, fontWeight: FontWeight.w900),
+                style: TextStyle(
+                  color: Color(0xFF1A1A1A),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
             ],
           ),
@@ -246,16 +235,26 @@ class _IngredientsAnalyzedCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.eco_rounded, color: Color(0xFF04542C), size: 28),
+          const Icon(Icons.eco_rounded, color: AppColors.forestGreen, size: 28),
+
           const SizedBox(height: 16),
           const Text(
             'Ingredients Analyzed',
-            style: TextStyle(color: Color(0xFF1A1A1A), fontSize: 20, fontWeight: FontWeight.w900),
+            style: TextStyle(
+              color: Color(0xFF1A1A1A),
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
+            ),
           ),
           const SizedBox(height: 8),
           const Text(
             "You've scanned 14 items today. All were free from your flagged allergens.",
-            style: TextStyle(color: Color(0xFF666666), fontSize: 13, height: 1.4, fontWeight: FontWeight.w500),
+            style: TextStyle(
+              color: Color(0xFF666666),
+              fontSize: 13,
+              height: 1.4,
+              fontWeight: FontWeight.w500,
+            ),
           ),
           const SizedBox(height: 24),
           _MiniTag(label: 'Organic Kale', status: 'Safe'),
@@ -278,14 +277,29 @@ class _MiniTag extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9FBF9),
+        color: AppColors.scaffoldBackgroundLight,
         borderRadius: BorderRadius.circular(16),
       ),
+
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF101010))),
-          Text(status, style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.primaryGreen, fontSize: 12)),
+          Text(
+            label,
+            style: const TextStyle(
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+
+            ),
+          ),
+          Text(
+            status,
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+              color: AppColors.primaryGreen,
+              fontSize: 12,
+            ),
+          ),
         ],
       ),
     );
@@ -322,12 +336,21 @@ class _StatCard extends StatelessWidget {
           const SizedBox(height: 20),
           Text(
             value,
-            style: TextStyle(color: textColor, fontSize: 24, fontWeight: FontWeight.w900),
+            style: TextStyle(
+              color: textColor,
+              fontSize: 24,
+              fontWeight: FontWeight.w900,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
             label,
-            style: TextStyle(color: textColor.withValues(alpha: 0.7), fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 0.5),
+            style: TextStyle(
+              color: textColor.withValues(alpha: 0.7),
+              fontSize: 8,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 0.5,
+            ),
           ),
         ],
       ),
@@ -378,12 +401,20 @@ class _RecentScanItem extends StatelessWidget {
               children: [
                 Text(
                   name,
-                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: Color(0xFF1A1A1A)),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 15,
+                    color: Color(0xFF1A1A1A),
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   '$time • $tag',
-                  style: const TextStyle(color: Colors.black26, fontSize: 11, fontWeight: FontWeight.w600),
+                  style: const TextStyle(
+                    color: Colors.black26,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),

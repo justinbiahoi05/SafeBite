@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../../core/theme/app_colors.dart';
 
 class InsightsPage extends StatelessWidget {
@@ -7,7 +8,7 @@ class InsightsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(color: Color(0xFFF9FBF9)),
+      decoration: const BoxDecoration(color: AppColors.scaffoldBackgroundLight),
       child: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
@@ -31,7 +32,7 @@ class InsightsPage extends StatelessWidget {
                     fontSize: 34,
                     height: 1.1,
                     fontWeight: FontWeight.w900,
-                    color: Color(0xFF1A1A1A),
+                    color: AppColors.textPrimary,
                   ),
                   children: [
                     const TextSpan(text: 'Your journey to\n'),
@@ -46,107 +47,70 @@ class InsightsPage extends StatelessWidget {
               const Text(
                 "Tracking the invisible. We've analyzed your consumption patterns over the last 30 days to help you minimize processed additives and maximize vitality.",
                 style: TextStyle(
-                  color: Color(0xFF666666),
+                  color: AppColors.textSecondary,
+
                   fontSize: 14,
                   height: 1.5,
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 30),
 
-              // Vitality Score Section with decorative images
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  // Decorative Frame 1
-                  Expanded(
-                    child: Container(
-                      height: 120,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(24),
-                        image: const DecorationImage(
-                          image: AssetImage('health_image_1_1776582516285.png'),
-                          fit: BoxFit.cover,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
-                            blurRadius: 15,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(30),
+                decoration: BoxDecoration(
+                  color: AppColors.accent.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  mainAxisSize: MainAxisSize.max,
+                  children: [
+                    const Text(
+                      '84',
+                      style: TextStyle(
+                        color: AppColors.textPrimary,
+
+                        fontWeight: FontWeight.w900,
+                        fontSize: 50,
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  // Decorative Frame 2
-                  Expanded(
-                    child: Container(
-                      height: 120,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(24),
-                        image: const DecorationImage(
-                          image: AssetImage('health_image_2_1776582531064.png'),
-                          fit: BoxFit.cover,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
-                            blurRadius: 15,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  // Vitality Score Card (Reduced width to fit the row)
-                  Container(
-                    width: 160,
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: AppColors.accent.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
+                    Column(
                       children: [
-                        const Text(
+                        Text(
                           'VITALITY SCORE',
                           style: TextStyle(
-                            color: Color(0xFF04542C),
+                            color: AppColors.forestGreen,
+
                             fontWeight: FontWeight.w900,
-                            fontSize: 10,
+                            fontSize: 15,
                             letterSpacing: 0.5,
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          '84',
-                          style: TextStyle(
-                            color: Color(0xFF1A1A1A),
-                            fontWeight: FontWeight.w900,
-                            fontSize: 40,
-                          ),
-                        ),
+
                         const SizedBox(height: 4),
                         Text(
                           '+12% this month',
                           style: TextStyle(
                             color: AppColors.primaryGreen,
                             fontWeight: FontWeight.w800,
-                            fontSize: 10,
+                            fontSize: 15,
                           ),
                         ),
                       ],
                     ),
-                  ),
-                ],
+                    Icon(
+                      Icons.check_circle_rounded,
+                      color: AppColors.primaryGreen,
+                      size: 25,
+                    ),
+                  ],
+                ),
               ),
 
               const SizedBox(height: 32),
 
-              // Chart Card
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(24),
@@ -167,20 +131,24 @@ class InsightsPage extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Column(
+                        Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
+                            const Text(
                               'Additive Intake Trend',
                               style: TextStyle(
                                 fontWeight: FontWeight.w900,
                                 fontSize: 18,
+                                color: AppColors.textPrimary,
                               ),
                             ),
                             Text(
                               'Daily chemical exposure levels',
                               style: TextStyle(
-                                color: Colors.black38,
+                                color: AppColors.mutedText.withValues(
+                                  alpha: 0.6,
+                                ),
+
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -199,7 +167,8 @@ class InsightsPage extends StatelessWidget {
                           child: const Text(
                             'Monthly',
                             style: TextStyle(
-                              color: Color(0xFF04542C),
+                              color: AppColors.forestGreen,
+
                               fontSize: 10,
                               fontWeight: FontWeight.w900,
                             ),
@@ -210,13 +179,14 @@ class InsightsPage extends StatelessWidget {
                     const SizedBox(height: 32),
                     const _SimpleBarChart(),
                     const SizedBox(height: 16),
-                    const Row(
+                    Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
                           'OCT 01',
                           style: TextStyle(
-                            color: Colors.black26,
+                            color: AppColors.mutedText.withValues(alpha: 0.5),
+
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
                           ),
@@ -224,7 +194,8 @@ class InsightsPage extends StatelessWidget {
                         Text(
                           'OCT 15',
                           style: TextStyle(
-                            color: Colors.black26,
+                            color: AppColors.mutedText.withValues(alpha: 0.5),
+
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
                           ),
@@ -232,7 +203,8 @@ class InsightsPage extends StatelessWidget {
                         Text(
                           'OCT 30',
                           style: TextStyle(
-                            color: Colors.black26,
+                            color: AppColors.mutedText.withValues(alpha: 0.5),
+
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
                           ),
@@ -244,23 +216,19 @@ class InsightsPage extends StatelessWidget {
               ),
               const SizedBox(height: 24),
 
-              // Safe Products Total Card
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(32),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF04542C),
+                  color: AppColors.forestGreen,
+
                   borderRadius: BorderRadius.circular(30),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      Icons.verified_rounded,
-                      color: Colors.white.withValues(alpha: 0.4),
-                      size: 32,
-                    ),
-                    const SizedBox(height: 48),
+                    Icon(Icons.verified_rounded, color: Colors.white, size: 32),
+                    const SizedBox(height: 40),
                     const Text(
                       '214',
                       style: TextStyle(
@@ -283,20 +251,24 @@ class InsightsPage extends StatelessWidget {
               ),
               const SizedBox(height: 40),
 
-              // Recent Scans Analysis
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
                     'Recent Scans',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
                   TextButton(
                     onPressed: () {},
                     child: const Text(
                       'View full archive →',
                       style: TextStyle(
-                        color: Colors.black45,
+                        color: AppColors.textSecondary,
+
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                       ),
@@ -326,8 +298,6 @@ class InsightsPage extends StatelessWidget {
                 status: 'SAFE',
                 isWarning: false,
               ),
-
-              const SizedBox(height: 120),
             ],
           ),
         ),
@@ -342,7 +312,7 @@ class _SimpleBarChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 150, // Increased height to prevent overflow with indicators
+      height: 150,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -350,10 +320,11 @@ class _SimpleBarChart extends StatelessWidget {
           _Bar(height: 60, color: Colors.grey.shade100),
           _Bar(height: 80, color: Colors.grey.shade100),
           _Bar(height: 40, color: AppColors.accent.withValues(alpha: 0.3)),
-          _Bar(height: 110, color: const Color(0xFF04542C), hasIndicator: true),
+          _Bar(height: 110, color: AppColors.forestGreen, hasIndicator: true),
+
           _Bar(height: 70, color: Colors.grey.shade100),
           _Bar(height: 90, color: AppColors.accent.withValues(alpha: 0.3)),
-          _Bar(height: 120, color: const Color(0xFF04542C)),
+          _Bar(height: 120, color: AppColors.forestGreen),
         ],
       ),
     );
@@ -451,28 +422,7 @@ class _InsightItem extends StatelessWidget {
                       style: const TextStyle(
                         fontWeight: FontWeight.w900,
                         fontSize: 16,
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isWarning
-                            ? Colors.red.withValues(alpha: 0.1)
-                            : AppColors.accent.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        status,
-                        style: TextStyle(
-                          color: isWarning
-                              ? Colors.red
-                              : AppColors.primaryGreen,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 10,
-                        ),
+                        color: AppColors.textPrimary,
                       ),
                     ),
                   ],
@@ -481,7 +431,8 @@ class _InsightItem extends StatelessWidget {
                 Text(
                   '$brand • $time',
                   style: const TextStyle(
-                    color: Colors.black45,
+                    color: AppColors.textSecondary,
+
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                   ),
@@ -489,7 +440,35 @@ class _InsightItem extends StatelessWidget {
               ],
             ),
           ),
-          const Icon(Icons.chevron_right_rounded, color: Colors.black12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.textPrimary,
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: isWarning
+                      ? Colors.red.withValues(alpha: 0.1)
+                      : AppColors.accent.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  status,
+                  style: TextStyle(
+                    color: isWarning ? Colors.red : AppColors.primaryGreen,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 10,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
