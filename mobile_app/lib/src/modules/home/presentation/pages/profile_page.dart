@@ -20,13 +20,7 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFFF9FDFB), Colors.white],
-        ),
-      ),
+      decoration: const BoxDecoration(color: AppColors.scaffoldBackgroundLight),
       child: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
@@ -48,10 +42,10 @@ class _ProfilePageState extends State<ProfilePage> {
                   style: const TextStyle(
                     fontSize: 42,
                     height: 1.1,
-                    fontFamily:
-                        'Outfit', // Assuming Outfit from theme, fallback to system
+                    fontFamily: 'Outfit',
                     fontWeight: FontWeight.w900,
-                    color: Color(0xFF1A1A1A),
+                    color: AppColors.textPrimary,
+
                   ),
                   children: [
                     const TextSpan(text: 'Your Health,\n'),
@@ -66,7 +60,8 @@ class _ProfilePageState extends State<ProfilePage> {
               const Text(
                 'Select your medical profile so we can filter ingredients that matter most to your vitality.',
                 style: TextStyle(
-                  color: Color(0xFF666666),
+                  color: AppColors.textSecondary,
+
                   fontSize: 15,
                   height: 1.5,
                   fontWeight: FontWeight.w500,
@@ -118,7 +113,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
               const SizedBox(height: 40),
 
-              // Save Button
               Container(
                 width: double.infinity,
                 height: 64,
@@ -162,13 +156,13 @@ class _ProfilePageState extends State<ProfilePage> {
                 child: Text(
                   'You can update these preferences anytime in settings.',
                   style: TextStyle(
-                    color: Color(0xFFAAAAAA),
+                    color: AppColors.mutedText,
+
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
-              const SizedBox(height: 120), // Extra space for bottom nav bar
             ],
           ),
         ),
@@ -226,7 +220,8 @@ class _HealthOptionCard extends StatelessWidget {
                 Text(
                   title,
                   style: const TextStyle(
-                    color: Color(0xFF1A1A1A),
+                    color: AppColors.textPrimary,
+
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
                   ),
@@ -235,7 +230,8 @@ class _HealthOptionCard extends StatelessWidget {
                 Text(
                   subtitle,
                   style: const TextStyle(
-                    color: Color(0xFF888888),
+                    color: AppColors.textSecondary,
+
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),

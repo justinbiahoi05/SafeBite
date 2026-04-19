@@ -29,14 +29,17 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: AppColors.background,
       extendBody: true,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
         leading: Padding(
           padding: const EdgeInsets.all(8.0),
           child: CircleAvatar(
-            backgroundColor: Colors.white.withValues(alpha: 0.1),
-            child: const Icon(Icons.close, color: Colors.white, size: 20),
+            radius: 20,
+            backgroundColor: Colors.grey.shade200,
+            backgroundImage: const NetworkImage(
+              'https://i.pravatar.cc/150?u=safebite',
+            ),
           ),
         ),
         title: Column(
@@ -45,19 +48,9 @@ class _HomeScreenState extends State<HomeScreen> {
             const Text(
               'SafeBite',
               style: TextStyle(
-                color: Colors.white,
+                color: AppColors.accent,
                 fontWeight: FontWeight.w900,
                 fontSize: 18,
-                letterSpacing: -0.5,
-              ),
-            ),
-            Text(
-              'SCANNER MODE',
-              style: TextStyle(
-                color: AppColors.accent,
-                fontWeight: FontWeight.w800,
-                fontSize: 10,
-                letterSpacing: 1.0,
               ),
             ),
           ],
@@ -69,8 +62,8 @@ class _HomeScreenState extends State<HomeScreen> {
               backgroundColor: Colors.white.withValues(alpha: 0.1),
               child: const Icon(
                 Icons.flash_on_rounded,
-                color: Colors.white,
-                size: 20,
+                color: AppColors.accent,
+                size: 25,
               ),
             ),
           ),
