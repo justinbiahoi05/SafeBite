@@ -342,7 +342,9 @@ class _InsightsPageState extends State<InsightsPage> {
                     final isSafe = result == 'safe';
                     return _InsightItem(
                       name: (data['ingredients'] as List?)?.join(', ') ?? 'N/A',
-                      brand: data['createdAt']?.toString().split(' ')[0] ?? 'Recently',
+                      brand: data['createdAt'] != null
+                          ? (data['createdAt'] as Timestamp).toDate().toString().split(' ')[0]
+                          : 'Recently',
                       time: _formatTime(data['createdAt']),
                       status: result.toUpperCase(),
                       isWarning: !isSafe,

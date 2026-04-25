@@ -5,7 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:mobile_app/services/auth_service.dart';
 import 'package:mobile_app/services/user_profile_service.dart';
 import 'package:mobile_app/src/core/theme/app_colors.dart';
-import 'package:mobile_app/src/modules/getstart/presentation/get_started_screen.dart';
+import 'package:mobile_app/src/modules/auth/presentation/login_screen.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -179,7 +179,7 @@ class _SettingsPageState extends State<SettingsPage> {
       await _authService.signOut();
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const GetStartedScreen()),
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
           (route) => false,
         );
       }
@@ -212,7 +212,7 @@ class _SettingsPageState extends State<SettingsPage> {
         await _authService.deleteAccount();
         if (mounted) {
           Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => const GetStartedScreen()),
+            MaterialPageRoute(builder: (_) => const LoginScreen()),
             (route) => false,
           );
         }

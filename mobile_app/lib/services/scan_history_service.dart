@@ -11,6 +11,7 @@ class ScanHistoryService {
     required double confidence,
     List<String>? ingredients,
     String? imageUrl,
+    String? productName,
   }) async {
     if (_user == null) throw Exception('User not logged in');
 
@@ -20,6 +21,7 @@ class ScanHistoryService {
       'confidence': confidence,
       'ingredients': ingredients ?? [],
       'imageUrl': imageUrl,
+      'productName': productName,
       'createdAt': FieldValue.serverTimestamp(),
     });
   }

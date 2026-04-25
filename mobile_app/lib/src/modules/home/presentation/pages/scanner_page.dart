@@ -23,11 +23,13 @@ class _ScannerPageState extends State<ScannerPage> {
 
   // Scanning state
   final _ingredientsController = TextEditingController();
+  final _productNameController = TextEditingController();
   final _aiService = AIService();
   bool _isScanning = false;
   bool _isAiReady = false;
   ScanResult? _lastResult;
   bool _showResult = false;
+  bool _isCameraActive = true; // Track camera state
 
   @override
   void initState() {
@@ -45,21 +47,23 @@ class _ScannerPageState extends State<ScannerPage> {
 
   Future<void> _initializeCamera() async {
     _cameras = await availableCameras();
-    if (_cameras != null && _cameras!.isNotEmpty) {
-      _controller = CameraController(
-        _cameras![_currentCameraIndex],
-        ResolutionPreset.high,
-        enableAudio: false,
-      );
+    if (_cameras == null || _cameras!.isEmpty) {
+      debugPrint('No cameras available');
+      return;
+    }
+    _controller = CameraController(
+      _cameras![_currentCameraIndex],
+      ResolutionPreset.high,
+      enableAudio: false,
+    );
 
-      try {
-        await _controller!.initialize();
-        if (mounted) {
-          setState(() => _isCameraInitialized = true);
-        }
-      } catch (e) {
-        debugPrint('Camera error: $e');
+    try {
+      await _controller!.initialize();
+      if (mounted) {
+        setState(() => _isCameraInitialized = true);
       }
+    } catch (e) {
+      debugPrint('Camera error: $e');
     }
   }
 
@@ -130,29 +134,13 @@ class _ScannerPageState extends State<ScannerPage> {
     // Simulate processing delay
     await Future.delayed(const Duration(milliseconds: 800));
 
-    final result = _aiService.predict(text);
+    // Get real prediction with confidence from ML model
+    final prediction = _aiService.predict(text);
+    final result = prediction["label"];
+    final confidence = prediction["confidence"];
 
     // Determine if safe or needs caution
     final isSafe = result == 'safe';
-    final confidence = _calculateConfidence(result);
-
-    // Capture and upload image
-    String? imageUrl;
-    if (_controller != null && _controller!.value.isInitialized) {
-      imageUrl = await _captureAndUploadImage();
-    }
-
-    // Save to history
-    try {
-      await ScanHistoryService().addScan(
-        result: result,
-        confidence: confidence,
-        ingredients: text.split(',').map((e) => e.trim()).toList(),
-        imageUrl: imageUrl,
-      );
-    } catch (e) {
-      debugPrint('Failed to save scan: $e');
-    }
 
     if (mounted) {
       setState(() {
@@ -165,18 +153,143 @@ class _ScannerPageState extends State<ScannerPage> {
         );
         _showResult = true;
       });
+      // Pause camera when showing results
+      _pauseCamera();
     }
   }
 
-  double _calculateConfidence(String result) {
-    // For now, return a simulated confidence
-    // In production, you'd get this from the model output
-    if (result == 'safe') return 0.95;
-    if (result == 'Unknown') return 0.3;
-    return 0.75;
+  Future<void> _saveScanWithProductName() async {
+    if (_lastResult == null) return;
+
+    // Show product name input dialog
+    final productName = await _showProductNameDialog();
+    if (productName == null) return; // User cancelled
+
+    // Capture and upload image (optional, don't fail scan if it fails)
+    String? imageUrl;
+    try {
+      if (_controller != null && _controller!.value.isInitialized) {
+        imageUrl = await _captureAndUploadImage();
+      }
+    } catch (e) {
+      debugPrint('Image capture skipped: $e');
+      imageUrl = null;
+    }
+
+    // Save to history with product name
+    try {
+      await ScanHistoryService().addScan(
+        result: _lastResult!.result,
+        confidence: _lastResult!.confidence,
+        ingredients: _lastResult!.ingredients.split(',').map((e) => e.trim()).toList(),
+        imageUrl: imageUrl,
+        productName: productName,
+      );
+    } catch (e) {
+      debugPrint('Failed to save scan: $e');
+    }
+
+    // Update the result with product name and show success
+    if (mounted) {
+      setState(() {
+        _lastResult = ScanResult(
+          result: _lastResult!.result,
+          confidence: _lastResult!.confidence,
+          ingredients: _lastResult!.ingredients,
+          isSafe: _lastResult!.isSafe,
+          productName: productName,
+        );
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Scan saved successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
+  }
+
+  Future<String?> _showProductNameDialog() async {
+    _productNameController.clear();
+    return showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Product Name',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.black,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Enter the product name (optional)',
+                style: TextStyle(color: Colors.grey.shade600),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _productNameController,
+                autofocus: true,
+                style: const TextStyle(color: Colors.black),
+                decoration: InputDecoration(
+                  hintText: 'e.g., Coca-Cola, Snickers',
+                  hintStyle: TextStyle(color: Colors.grey.shade400),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context, _productNameController.text.trim());
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.accent,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Save Scan',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   void _resetScanner() {
+    // Resume camera when going back to scanner
+    _resumeCamera();
     setState(() {
       _showResult = false;
       _lastResult = null;
@@ -184,10 +297,31 @@ class _ScannerPageState extends State<ScannerPage> {
     });
   }
 
+  Future<void> _resumeCamera() async {
+    if (_controller != null && !_controller!.value.isInitialized) {
+      await _initializeCamera();
+    }
+    _isCameraActive = true;
+  }
+
+  void _pauseCamera() {
+    _isCameraActive = false;
+    // Dispose camera to release image buffers
+    _controller?.dispose();
+    _controller = null;
+  }
+
+  Future<void> _resumeCameraPreview() async {
+    // Reinitialize camera
+    await _initializeCamera();
+    _isCameraActive = true;
+  }
+
   @override
   void dispose() {
     _controller?.dispose();
     _ingredientsController.dispose();
+    _productNameController.dispose();
     super.dispose();
   }
 
@@ -198,6 +332,7 @@ class _ScannerPageState extends State<ScannerPage> {
         result: _lastResult!,
         onScanAgain: _resetScanner,
         onAddMore: _resetScanner,
+        onSave: _saveScanWithProductName,
       );
     }
 
@@ -206,7 +341,21 @@ class _ScannerPageState extends State<ScannerPage> {
       body: Stack(
         children: [
           // Camera Preview
-          if (_isCameraInitialized && _controller != null)
+          if (_cameras == null || _cameras!.isEmpty)
+            const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.videocam_off, color: Colors.white54, size: 64),
+                  SizedBox(height: 16),
+                  Text(
+                    'No camera available',
+                    style: TextStyle(color: Colors.white54),
+                  ),
+                ],
+              ),
+            )
+          else if (_isCameraInitialized && _controller != null && _isCameraActive)
             Positioned.fill(child: CameraPreview(_controller!))
           else
             const Center(
@@ -389,12 +538,14 @@ class ScanResult {
   final double confidence;
   final String ingredients;
   final bool isSafe;
+  final String? productName;
 
   ScanResult({
     required this.result,
     required this.confidence,
     required this.ingredients,
     required this.isSafe,
+    this.productName,
   });
 }
 
@@ -402,11 +553,13 @@ class _ResultView extends StatelessWidget {
   final ScanResult result;
   final VoidCallback onScanAgain;
   final VoidCallback onAddMore;
+  final VoidCallback onSave;
 
   const _ResultView({
     required this.result,
     required this.onScanAgain,
     required this.onAddMore,
+    required this.onSave,
   });
 
   @override
@@ -414,7 +567,7 @@ class _ResultView extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
             children: [
@@ -459,7 +612,7 @@ class _ResultView extends StatelessWidget {
                   ),
                 ],
               ),
-              const Spacer(),
+              const SizedBox(height: 16),
 
               // Result Card
               Container(
@@ -542,7 +695,45 @@ class _ResultView extends StatelessWidget {
                 ),
               ),
 
-              const Spacer(),
+              // Product Name (if available)
+              if (result.productName != null && result.productName!.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'PRODUCT NAME',
+                        style: TextStyle(
+                          color: Colors.white54,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        result.productName!,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
+              const SizedBox(height: 24),
 
               // Actions
               Row(
@@ -569,7 +760,7 @@ class _ResultView extends StatelessWidget {
                   const SizedBox(width: 16),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: onScanAgain,
+                      onPressed: onSave, // Save scan with product name
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.accent,
                         padding: const EdgeInsets.symmetric(vertical: 16),
@@ -578,7 +769,7 @@ class _ResultView extends StatelessWidget {
                         ),
                       ),
                       child: const Text(
-                        'New Scan',
+                        'Save Scan',
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w700,

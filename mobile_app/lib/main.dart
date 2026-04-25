@@ -4,8 +4,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 
 import 'package:mobile_app/src/core/theme/app_colors.dart';
+import 'package:mobile_app/services/onboarding_service.dart';
 
 import 'src/modules/onboarding/presentation/onboarding_screen.dart';
+import 'src/modules/getstart/presentation/get_started_screen.dart';
+import 'src/modules/auth/presentation/login_screen.dart';
 import 'src/modules/home/presentation/home_screen.dart';
 
 void main() async {
@@ -42,11 +45,43 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class AuthWrapper extends StatelessWidget {
+class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
 
   @override
+  State<AuthWrapper> createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends State<AuthWrapper> {
+  bool _isOnboardingComplete = false;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkOnboarding();
+  }
+
+  Future<void> _checkOnboarding() async {
+    final complete = await OnboardingService.isOnboardingComplete();
+    if (mounted) {
+      setState(() {
+        _isOnboardingComplete = complete;
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.accent),
+        ),
+      );
+    }
+
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
@@ -63,8 +98,21 @@ class AuthWrapper extends StatelessWidget {
           return const HomeScreen();
         }
 
-        // User not logged in, go to onboarding
-        return const OnboardingScreen();
+        // User not logged in
+        if (!_isOnboardingComplete) {
+          // First time user, show onboarding
+          return OnboardingScreen(
+            onComplete: () async {
+              await OnboardingService.setOnboardingComplete();
+              if (mounted) {
+                setState(() => _isOnboardingComplete = true);
+              }
+            },
+          );
+        }
+
+        // Returning user, show login
+        return const LoginScreen();
       },
     );
   }
