@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/theme/app_colors.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -17,8 +19,67 @@ class _ProfilePageState extends State<ProfilePage> {
     'Hypertension': false,
   };
 
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedProfile();
+  }
+
+  /// Load saved health profile from SharedPreferences
+  Future<void> _loadSavedProfile() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final profileJson = prefs.getString('health_profile');
+
+      if (profileJson != null) {
+        final decoded = jsonDecode(profileJson) as Map<String, dynamic>;
+        
+        setState(() {
+          // Update _healthConditions with saved values
+          _healthConditions['Diabetes'] = decoded['Diabetes'] as bool? ?? false;
+          _healthConditions['Kidney Disease'] = decoded['Kidney Disease'] as bool? ?? false;
+          _healthConditions['Pregnancy'] = decoded['Pregnancy'] as bool? ?? false;
+          _healthConditions['Peanut Allergy'] = decoded['Peanut Allergy'] as bool? ?? false;
+          _healthConditions['Hypertension'] = decoded['Hypertension'] as bool? ?? false;
+        });
+      }
+    } catch (e) {
+      debugPrint("Error loading health profile: $e");
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  /// Save health profile to SharedPreferences
+  Future<void> _saveProfile() async {
+    final prefs = await SharedPreferences.getInstance();
+    final profileJson = jsonEncode(_healthConditions);
+    await prefs.setString('health_profile', profileJson);
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Health profile saved successfully!'),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Container(
+        decoration: const BoxDecoration(color: AppColors.scaffoldBackgroundLight),
+        child: const Center(
+          child: CircularProgressIndicator(
+            color: AppColors.primaryGreen,
+          ),
+        ),
+      );
+    }
     return Container(
       decoration: const BoxDecoration(color: AppColors.scaffoldBackgroundLight),
       child: SafeArea(
@@ -130,9 +191,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ],
                 ),
                 child: ElevatedButton(
-                  onPressed: () {
-                    // Save logic
-                  },
+                  onPressed: _saveProfile,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.transparent,
                     shadowColor: Colors.transparent,

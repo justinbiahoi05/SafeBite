@@ -1,9 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_app/src/core/theme/app_colors.dart';
 
+import 'services/ai_service.dart';
 import 'src/modules/onboarding/presentation/onboarding_screen.dart';
 
-void main() {
+void main() async {
+  // Đảm bảo Flutter engine đã khởi tạo
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Khởi tạo AI Service trước khi chạy ứng dụng
+  // Model TFLite chỉ được load một lần duy nhất
+  try {
+    await AIService().initAI();
+    print("Main: AI Service initialized successfully!");
+  } catch (e) {
+    print("Main: Failed to initialize AI Service - $e");
+  }
+  
   runApp(const MyApp());
 }
 

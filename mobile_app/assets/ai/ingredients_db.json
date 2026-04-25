@@ -1,0 +1,26 @@
+{
+  "sugar": ["diabetes"],
+  "glucose": ["diabetes"],
+  "fructose": ["diabetes"],
+  "corn syrup": ["diabetes"],
+  "high fructose corn syrup": ["diabetes"],
+  
+  "sodium": ["hypertension", "kidney disease"],
+  "salt": ["hypertension", "kidney disease"],
+  "msg": ["hypertension"],
+  "monosodium glutamate": ["hypertension"],
+  
+  "peanut": ["peanut allergy"],
+  "peanut oil": ["peanut allergy"],
+  "groundnut": ["peanut allergy"],
+  "arachis": ["peanut allergy"],
+  
+  "raw milk": ["pregnancy"],
+  "unpasteurized": ["pregnancy"],
+  "soft cheese": ["pregnancy"],
+  "unpasteurized cheese": ["pregnancy"],
+  
+  "potassium": ["kidney disease"],
+  "phosphate": ["kidney disease"],
+  "phosphorus": ["kidney disease"]
+}
