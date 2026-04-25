@@ -79,4 +79,76 @@ class ScanHistoryService {
 
     return snapshot.docs;
   }
+
+  Future<List<Map<String, dynamic>>> getWeeklyTrend() async {
+    if (_user == null) return [];
+
+    final now = DateTime.now();
+    final List<Map<String, dynamic>> trend = [];
+
+    for (int i = 6; i >= 0; i--) {
+      final date = now.subtract(Duration(days: i));
+      final startOfDay = DateTime(date.year, date.month, date.day);
+      final endOfDay = startOfDay.add(const Duration(days: 1));
+
+      final totalSnapshot = await _scans
+          .where('userId', isEqualTo: _user.uid)
+          .where('createdAt', isGreaterThan: startOfDay)
+          .where('createdAt', isLessThan: endOfDay)
+          .count()
+          .get();
+
+      final safeSnapshot = await _scans
+          .where('userId', isEqualTo: _user.uid)
+          .where('result', isEqualTo: 'safe')
+          .where('createdAt', isGreaterThan: startOfDay)
+          .where('createdAt', isLessThan: endOfDay)
+          .count()
+          .get();
+
+      trend.add({
+        'date': startOfDay,
+        'total': totalSnapshot.count ?? 0,
+        'safe': safeSnapshot.count ?? 0,
+      });
+    }
+
+    return trend;
+  }
+
+  // Get monthly trend data (last 30 days, grouped by week)
+  Future<List<Map<String, dynamic>>> getMonthlyTrend() async {
+    if (_user == null) return [];
+
+    final now = DateTime.now();
+    final List<Map<String, dynamic>> trend = [];
+
+    for (int i = 3; i >= 0; i--) {
+      final weekEnd = now.subtract(Duration(days: i * 7));
+      final weekStart = weekEnd.subtract(const Duration(days: 7));
+
+      final totalSnapshot = await _scans
+          .where('userId', isEqualTo: _user.uid)
+          .where('createdAt', isGreaterThan: weekStart)
+          .where('createdAt', isLessThan: weekEnd)
+          .count()
+          .get();
+
+      final safeSnapshot = await _scans
+          .where('userId', isEqualTo: _user.uid)
+          .where('result', isEqualTo: 'safe')
+          .where('createdAt', isGreaterThan: weekStart)
+          .where('createdAt', isLessThan: weekEnd)
+          .count()
+          .get();
+
+      trend.add({
+        'date': weekStart,
+        'total': totalSnapshot.count ?? 0,
+        'safe': safeSnapshot.count ?? 0,
+      });
+    }
+
+    return trend;
+  }
 }

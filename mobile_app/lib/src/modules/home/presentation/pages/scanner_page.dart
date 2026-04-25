@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:path_provider/path_provider.dart';
 import 'dart:ui';
+import 'dart:io';
 import '../../../../core/theme/app_colors.dart';
 import 'package:mobile_app/services/ai_service.dart';
 import 'package:mobile_app/services/scan_history_service.dart';
@@ -80,6 +83,33 @@ class _ScannerPageState extends State<ScannerPage> {
     }
   }
 
+  Future<String?> _captureAndUploadImage() async {
+    if (_controller == null || !_controller!.value.isInitialized) return null;
+
+    try {
+      // Capture image
+      final XFile image = await _controller!.takePicture();
+
+      // Get reference to Firebase Storage
+      final storageRef = FirebaseStorage.instance
+          .ref()
+          .child('scans')
+          .child('${DateTime.now().millisecondsSinceEpoch}.jpg');
+
+      // Upload file
+      final file = File(image.path);
+      final metadata = SettableMetadata(contentType: 'image/jpeg');
+      await storageRef.putFile(file, metadata);
+
+      // Get download URL
+      final url = await storageRef.getDownloadURL();
+      return url;
+    } catch (e) {
+      debugPrint('Failed to capture image: $e');
+      return null;
+    }
+  }
+
   Future<void> _scanIngredients() async {
     final text = _ingredientsController.text.trim();
     if (text.isEmpty) {
@@ -106,12 +136,19 @@ class _ScannerPageState extends State<ScannerPage> {
     final isSafe = result == 'safe';
     final confidence = _calculateConfidence(result);
 
+    // Capture and upload image
+    String? imageUrl;
+    if (_controller != null && _controller!.value.isInitialized) {
+      imageUrl = await _captureAndUploadImage();
+    }
+
     // Save to history
     try {
       await ScanHistoryService().addScan(
         result: result,
         confidence: confidence,
         ingredients: text.split(',').map((e) => e.trim()).toList(),
+        imageUrl: imageUrl,
       );
     } catch (e) {
       debugPrint('Failed to save scan: $e');

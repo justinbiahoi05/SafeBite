@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:mobile_app/src/core/theme/app_colors.dart';
 import 'package:mobile_app/services/auth_service.dart';
+import 'package:mobile_app/src/core/theme/app_colors.dart';
 import 'component/auth_text_field.dart';
 import 'component/auth_button.dart';
 import 'component/auth_header.dart';
@@ -65,6 +65,29 @@ class _LoginScreenState extends State<LoginScreen> {
         return 'This account has been disabled';
       default:
         return 'Login failed. Please check your credentials.';
+    }
+  }
+
+  // Login with Google
+  Future<void> _loginWithGoogle() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      await AuthService().signInWithGoogle();
+
+      if (mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      setState(() => _error = 'Google sign-in failed. Please try again.');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -235,7 +258,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: SizedBox(
                           width: double.infinity,
                           child: OutlinedButton(
-                            onPressed: () {},
+                            onPressed: _isLoading ? null : _loginWithGoogle,
                             style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               side: BorderSide(
