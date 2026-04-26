@@ -8,7 +8,9 @@ part 'component/onboarding_hero_panel.dart';
 part 'component/onboarding_meta_widgets.dart';
 
 class OnboardingScreen extends StatefulWidget {
-  const OnboardingScreen({super.key});
+  final VoidCallback? onComplete;
+
+  const OnboardingScreen({super.key, this.onComplete});
 
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
@@ -44,6 +46,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   void _openHome() {
     if (!mounted) return;
+    widget.onComplete?.call();
     Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(builder: (_) => const GetStartedScreen()),
     );

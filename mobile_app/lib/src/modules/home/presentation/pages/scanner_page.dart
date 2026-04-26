@@ -1,14 +1,16 @@
 import 'dart:io';
+import 'dart:ui';
 import 'package:camera/camera.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
-import 'package:mobile_app/src/modules/home/presentation/pages/scan_result_page.dart';
 import 'package:path_provider/path_provider.dart';
 
-
+import 'package:mobile_app/services/ai_service.dart';
+import 'package:mobile_app/services/scan_history_service.dart';
 import 'package:mobile_app/services/ocr_service.dart';
-import '../../../../core/theme/app_colors.dart' as theme;
+import '../../../../core/theme/app_colors.dart';
 
 class ScannerPage extends StatefulWidget {
   const ScannerPage({super.key});
@@ -20,172 +22,148 @@ class ScannerPage extends StatefulWidget {
 class _ScannerPageState extends State<ScannerPage> {
   CameraController? _controller;
   List<CameraDescription>? _cameras;
+  bool _isCameraInitialized = false;
+  int _currentCameraIndex = 0;
+  FlashMode _flashMode = FlashMode.off;
 
-  bool _ready = false;
-  bool _processing = false;
-  int _cameraIndex = 0;
-  FlashMode _flash = FlashMode.off;
-
-  Offset? _tapPosition;
-  bool _showFocusCircle = false;
+  // Scanning state
+  final _ingredientsController = TextEditingController();
+  final _productNameController = TextEditingController();
+  final _aiService = AIService();
+  
+  bool _isScanning = false;
+  bool _isAiReady = false;
+  ScanResult? _lastResult;
+  bool _showResult = false;
+  bool _isCameraActive = true;
 
   @override
   void initState() {
     super.initState();
-    _initCamera();
+    _initializeCamera();
+    _initAI();
   }
 
-  Future<void> _initCamera() async {
-    try {
-      _cameras = await availableCameras();
-      if (_cameras == null || _cameras!.isEmpty) return;
-
-      _controller = CameraController(
-        _cameras![_cameraIndex],
-        ResolutionPreset.high,
-        enableAudio: false,
-      );
-
-      await _controller!.initialize();
-      await _controller!.setFlashMode(_flash);
-
-      if (mounted) setState(() => _ready = true);
-    } catch (e) {
-      debugPrint("Camera init error: $e");
+  Future<void> _initAI() async {
+    await _aiService.initAI();
+    if (mounted) {
+      setState(() => _isAiReady = true);
     }
   }
 
+  Future<void> _initializeCamera() async {
+    _cameras = await availableCameras();
+    if (_cameras == null || _cameras!.isEmpty) return;
 
-  void _handleTapFocus(TapUpDetails details) async {
-    if (_controller == null || !_controller!.value.isInitialized) return;
-
-
-    final RenderBox box = context.findRenderObject() as RenderBox;
-    final Offset localPos = details.localPosition;
-    final double fullWidth = box.size.width;
-    final double fullHeight = box.size.height;
-
-
-    final double x = localPos.dx / fullWidth;
-    final double y = localPos.dy / fullHeight;
-
-    setState(() {
-      _tapPosition = localPos;
-      _showFocusCircle = true;
-    });
-
-    try {
-      await _controller!.setFocusPoint(Offset(x, y));
-      await _controller!.setExposurePoint(Offset(x, y));
-    } catch (e) {
-      debugPrint("Lỗi lấy nét: $e");
-    }
-
-    Future.delayed(const Duration(seconds: 1), () {
-      if (mounted) setState(() => _showFocusCircle = false);
-    });
-  }
-
-
-  Future<File> _cropToFrame(XFile file) async {
-    final bytes = await file.readAsBytes();
-    img.Image? image = img.decodeImage(bytes);
-    if (image == null) return File(file.path);
-
-
-    image = img.bakeOrientation(image);
-
-    final int w = image.width;
-    final int h = image.height;
-
-
-    final int cropW = (w * 0.8).toInt();
-    final int cropH = (h * 0.18).toInt();
-
-    final int left = (w - cropW) ~/ 2;
-    final int top = (h - cropH) ~/ 2;
-
-    final img.Image cropped = img.copyCrop(
-      image,
-      x: left,
-      y: top,
-      width: cropW,
-      height: cropH,
+    _controller = CameraController(
+      _cameras![_currentCameraIndex],
+      ResolutionPreset.high,
+      enableAudio: false,
     );
 
-    final dir = await getTemporaryDirectory();
-    final path = '${dir.path}/scan_${DateTime.now().millisecondsSinceEpoch}.jpg';
-    return File(path)..writeAsBytesSync(img.encodeJpg(cropped));
-  }
-
-  Future<void> _scan() async {
-    if (_processing || _controller == null || !_controller!.value.isInitialized) return;
-
-    setState(() => _processing = true);
-
     try {
-      final raw = await _controller!.takePicture();
-      final cropped = await _cropToFrame(raw);
-      
-      final text = await OCRService.recognizeTextFromImage(cropped);
-
-      if (!mounted) return;
-
-
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => ScanResultPage(text: text)),
-      );
+      await _controller!.initialize();
+      if (mounted) {
+        setState(() => _isCameraInitialized = true);
+      }
     } catch (e) {
-      debugPrint("Lỗi khi scan: $e");
-    } finally {
-      if (mounted) setState(() => _processing = false);
+      debugPrint('Camera error: $e');
     }
   }
 
+  void _toggleFlash() async {
+    _flashMode = _flashMode == FlashMode.off ? FlashMode.torch : FlashMode.off;
+    await _controller?.setFlashMode(_flashMode);
+    setState(() {});
+  }
+
+  Future<void> _flipCamera() async {
+    if (_cameras == null || _cameras!.length < 2) return;
+    _currentCameraIndex = (_currentCameraIndex + 1) % _cameras!.length;
+    await _controller?.dispose();
+    _isCameraInitialized = false;
+    _initializeCamera();
+  }
+
+  // Chọn ảnh từ Gallery và quét chữ (OCR)
   Future<void> _pickGallery() async {
     final picker = ImagePicker();
     final file = await picker.pickImage(source: ImageSource.gallery);
     if (file == null) return;
 
-    setState(() => _processing = true);
+    setState(() => _isScanning = true);
     try {
       final text = await OCRService.recognizeTextFromImage(File(file.path));
-      if (!mounted) return;
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => ScanResultPage(text: text)),
-      );
+      if (text.isNotEmpty) {
+        _ingredientsController.text = text;
+        _scanIngredients(); 
+      }
+    } catch (e) {
+      debugPrint("OCR Error: $e");
     } finally {
-      if (mounted) setState(() => _processing = false);
+      if (mounted) setState(() => _isScanning = false);
     }
   }
 
-  void _switchCamera() {
-    _cameraIndex = (_cameraIndex + 1) % _cameras!.length;
-    _controller?.dispose();
-    _ready = false;
-    _initCamera();
+  Future<void> _scanIngredients() async {
+    final text = _ingredientsController.text.trim();
+    if (text.isEmpty) return;
+
+    setState(() {
+      _isScanning = true;
+      _showResult = false;
+    });
+
+    await Future.delayed(const Duration(milliseconds: 800));
+    final prediction = _aiService.predict(text);
+    
+    if (mounted) {
+      setState(() {
+        _isScanning = false;
+        _lastResult = ScanResult(
+          result: prediction["label"],
+          confidence: prediction["confidence"],
+          ingredients: text,
+          isSafe: prediction["label"] == 'safe',
+        );
+        _showResult = true;
+      });
+      _pauseCamera();
+    }
   }
 
-  void _toggleFlash() async {
-    _flash = _flash == FlashMode.off ? FlashMode.torch : FlashMode.off;
-    await _controller?.setFlashMode(_flash);
-    setState(() {});
+  void _pauseCamera() {
+    _isCameraActive = false;
+    _controller?.dispose();
+    _controller = null;
+  }
+
+  void _resetScanner() {
+    _initializeCamera().then((_) {
+      setState(() {
+        _isCameraActive = true;
+        _showResult = false;
+        _lastResult = null;
+        _ingredientsController.clear();
+      });
+    });
   }
 
   @override
   void dispose() {
     _controller?.dispose();
+    _ingredientsController.dispose();
+    _productNameController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (!_ready || _controller == null) {
-      return const Scaffold(
-        backgroundColor: Colors.black,
-        body: Center(child: CircularProgressIndicator(color: theme.AppColors.accent)),
+    if (_showResult && _lastResult != null) {
+      return _ResultView(
+        result: _lastResult!,
+        onScanAgain: _resetScanner,
+        onAddMore: _resetScanner,
       );
     }
 
@@ -193,74 +171,55 @@ class _ScannerPageState extends State<ScannerPage> {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // 1. Camera Preview
-          Center(
-            child: CameraPreview(_controller!),
-          ),
+          if (_isCameraInitialized && _controller != null && _isCameraActive)
+            Positioned.fill(child: CameraPreview(_controller!))
+          else
+            const Center(child: CircularProgressIndicator(color: AppColors.accent)),
 
-
-          Positioned.fill(
-            child: GestureDetector(onTapUp: _handleTapFocus),
-          ),
-
-
-          if (_showFocusCircle && _tapPosition != null)
-            Positioned(
-              left: _tapPosition!.dx - 35,
-              top: _tapPosition!.dy - 35,
-              child: Container(
-                width: 70,
-                height: 70,
-                decoration: BoxDecoration(
-                  border: Border.all(color: theme.AppColors.accent, width: 2),
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
-
-
-          const IgnorePointer(child: _ScannerOverlay()),
-
+          Positioned.fill(child: _ScannerOverlay()),
 
           Positioned(
             top: 50,
             right: 20,
             child: IconButton(
+              icon: Icon(_flashMode == FlashMode.off ? Icons.flash_off : Icons.flash_on, color: Colors.white),
               onPressed: _toggleFlash,
-              icon: Icon(
-                _flash == FlashMode.off ? Icons.flash_off : Icons.flash_on,
-                color: Colors.white,
+            ),
+          ),
+
+          Positioned(
+            bottom: 220,
+            left: 24,
+            right: 24,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.9),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: TextField(
+                controller: _ingredientsController,
+                style: const TextStyle(color: Colors.black),
+                decoration: const InputDecoration(
+                  hintText: 'Nhập hoặc quét thành phần...',
+                  border: InputBorder.none,
+                ),
+                onSubmitted: (_) => _scanIngredients(),
               ),
             ),
           ),
 
-
           Positioned(
-            bottom: 120,
+            bottom: 80,
             left: 0,
             right: 0,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _Action(icon: Icons.photo, label: "ALBUM", onTap: _pickGallery),
-                GestureDetector(
-                  onTap: _scan,
-                  child: _processing
-                      ? const CircularProgressIndicator(color: theme.AppColors.accent)
-                      : const _ScanBtn(),
-                ),
-                _Action(icon: Icons.flip_camera_ios, label: "XOAY", onTap: _switchCamera),
+                _ActionButton(icon: Icons.photo_library, label: 'ALBUM', onTap: _pickGallery),
+                _ScanButton(isScanning: _isScanning, onTap: _scanIngredients),
+                _ActionButton(icon: Icons.flip_camera_ios, label: 'XOAY', onTap: _flipCamera),
               ],
-            ),
-          ),
-          
-
-          Positioned(
-            top: 50,
-            left: 10,
-            child: IconButton(
-              icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-              onPressed: () => Navigator.pop(context),
             ),
           ),
         ],
@@ -269,105 +228,104 @@ class _ScannerPageState extends State<ScannerPage> {
   }
 }
 
+// --- Các Widget hỗ trợ ---
 
-class _ScannerOverlay extends StatelessWidget {
-  const _ScannerOverlay();
+class ScanResult {
+  final String result;
+  final double confidence;
+  final String ingredients;
+  final bool isSafe;
+  ScanResult({required this.result, required this.confidence, required this.ingredients, required this.isSafe});
+}
+
+class _ResultView extends StatelessWidget {
+  final ScanResult result;
+  final VoidCallback onScanAgain;
+  final VoidCallback onAddMore;
+
+  const _ResultView({required this.result, required this.onScanAgain, required this.onAddMore});
 
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(
-      size: Size.infinite,
-      painter: _ReticlePainter(),
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(result.isSafe ? Icons.check_circle : Icons.warning, 
+                 color: result.isSafe ? Colors.green : Colors.orange, size: 100),
+            const SizedBox(height: 20),
+            Text(result.result.toUpperCase(), 
+                 style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white)),
+            Text("Độ tin cậy: ${(result.confidence * 100).toStringAsFixed(1)}%", 
+                 style: const TextStyle(color: Colors.white70)),
+            const SizedBox(height: 40),
+            ElevatedButton(onPressed: onScanAgain, child: const Text("QUÉT LẠI")),
+          ],
+        ),
+      ),
     );
+  }
+}
+
+class _ScannerOverlay extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(size: Size.infinite, painter: _ReticlePainter());
   }
 }
 
 class _ReticlePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = theme.AppColors.accent
-      ..strokeWidth = 3
-      ..style = PaintingStyle.stroke;
-
-
+    final paint = Paint()..color = AppColors.accent..style = PaintingStyle.stroke..strokeWidth = 3;
     final w = size.width * 0.8;
-    final h = size.height * 0.18; 
-    final l = (size.width - w) / 2;
-    final t = (size.height - h) / 2;
-
-    final rect = Rect.fromLTWH(l, t, w, h);
-    
-
+    final h = size.height * 0.2;
+    final rect = Rect.fromLTWH((size.width - w) / 2, (size.height - h) / 2 - 50, w, h);
     canvas.drawRect(rect, paint);
-    
-
-    final cornerPaint = Paint()
-      ..color = theme.AppColors.accent
-      ..strokeWidth = 5
-      ..style = PaintingStyle.stroke;
-    
-    final double cLen = 20.0;
-
-    canvas.drawLine(Offset(l, t), Offset(l + cLen, t), cornerPaint);
-    canvas.drawLine(Offset(l, t), Offset(l, t + cLen), cornerPaint);
-
-    canvas.drawLine(Offset(l + w, t), Offset(l + w - cLen, t), cornerPaint);
-    canvas.drawLine(Offset(l + w, t), Offset(l + w, t + cLen), cornerPaint);
-
-    canvas.drawLine(Offset(l, t + h), Offset(l + cLen, t + h), cornerPaint);
-    canvas.drawLine(Offset(l, t + h), Offset(l, t + h - cLen), cornerPaint);
-
-    canvas.drawLine(Offset(l + w, t + h), Offset(l + w - cLen, t + h), cornerPaint);
-    canvas.drawLine(Offset(l + w, t + h), Offset(l + w, t + h - cLen), cornerPaint);
   }
-
   @override
   bool shouldRepaint(_) => false;
 }
 
-class _Action extends StatelessWidget {
+class _ActionButton extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
-
-  const _Action({required this.icon, required this.label, required this.onTap});
+  const _ActionButton({required this.icon, required this.label, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return InkWell(
       onTap: onTap,
       child: Column(
         children: [
-          CircleAvatar(
-            radius: 25,
-            backgroundColor: Colors.white24,
-            child: Icon(icon, color: Colors.white),
-          ),
-          const SizedBox(height: 8),
-          Text(label, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+          CircleAvatar(backgroundColor: Colors.white24, child: Icon(icon, color: Colors.white)),
+          const SizedBox(height: 4),
+          Text(label, style: const TextStyle(color: Colors.white, fontSize: 10)),
         ],
       ),
     );
   }
 }
 
-class _ScanBtn extends StatelessWidget {
-  const _ScanBtn();
+class _ScanButton extends StatelessWidget {
+  final bool isScanning;
+  final VoidCallback onTap;
+  const _ScanButton({required this.isScanning, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 75,
-      height: 75,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: 4),
-        gradient: const LinearGradient(
-          colors: [theme.AppColors.accent, Colors.orangeAccent],
-        ),
+    return GestureDetector(
+      onTap: isScanning ? null : onTap,
+      child: Container(
+        width: 80, height: 80,
+        decoration: const BoxDecoration(shape: BoxShape.circle, gradient: LinearGradient(colors: AppColors.buttonGradient)),
+        child: isScanning 
+          ? const Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator(color: Colors.white))
+          : const Icon(Icons.document_scanner, color: Colors.white, size: 40),
       ),
-      child: const Icon(Icons.camera_alt, color: Colors.white, size: 32),
     );
   }
 }

@@ -24,7 +24,6 @@ class AIService {
   bool get isInitialized => _isInitialized;
 
   /// Khởi tạo AI (Gọi hàm này ở main.dart khi mở App)
-  /// Model AI chỉ được load một lần duy nhất trong suốt vòng đời ứng dụng
   Future<void> initAI() async {
     if (_isInitialized) {
       print("AI Service: Already initialized!");
@@ -52,19 +51,18 @@ class AIService {
     }
   }
 
-  /// Hàm dự đoán - trả về nhãn từ labels.json dựa trên xác suất cao nhất
-  /// Nếu xác suất < 0.4, trả về 'Unknown'
-  String predict(String text) {
+  /// Hàm dự đoán - trả về Map chứa 'label' và 'confidence'
+  Map<String, dynamic> predict(String text) {
+    // Kiểm tra khởi tạo (Hợp nhất từ develop & master)
     if (!_isInitialized || _interpreter == null || _vocab == null || _labels == null) {
-      return "Unknown";
+      return {"label": "Unknown", "confidence": 0.0};
     }
 
     // Tiền xử lý: Chuyển text thành mảng số (Tokenization)
     List<double> input = _tokenize(text);
 
     // Chuẩn bị đầu ra (Mảng chứa số lượng nhãn xác suất)
-    var output =
-        List<double>.filled(_labels!.length, 0).reshape([1, _labels!.length]);
+    var output = List<double>.filled(_labels!.length, 0).reshape([1, _labels!.length]);
 
     // Chạy AI
     _interpreter!.run([input], output);
@@ -83,21 +81,21 @@ class AIService {
 
     // Nếu AI quá phân vân (dưới 40%), báo unknown cho an toàn
     if (maxScore < 0.4) {
-      return "Unknown";
+      return {"label": "Unknown", "confidence": maxScore};
     }
 
-    return _labels![maxIdx];
+    return {
+      "label": _labels![maxIdx],
+      "confidence": maxScore
+    };
   }
 
   /// Hàm biến chữ thành số (Tokenization)
-  /// - Loại bỏ các ký tự đặc biệt (dấu phẩy, chấm, ngoặc) trước khi split
-  /// - Đảm bảo kết quả khớp chính xác với vocab.json
   List<double> _tokenize(String text) {
     // Chuyển về chữ thường
     String cleanText = text.toLowerCase();
 
-    // Loại bỏ các ký tự đặc biệt (dấu phẩy, chấm, ngoặc, v.v)
-    // Giữ lại khoảng trắng và các ký tự chữ cái, số
+    // Loại bỏ các ký tự đặc biệt
     cleanText = cleanText.replaceAll(RegExp(r'[^\w\s]'), ' ');
 
     // Split thành từng từ

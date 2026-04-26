@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../../../../core/theme/app_colors.dart';
+import 'package:mobile_app/services/user_profile_service.dart';
+import 'package:mobile_app/src/core/theme/app_colors.dart';
+import 'package:mobile_app/src/modules/home/presentation/pages/settings_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -19,67 +19,81 @@ class _ProfilePageState extends State<ProfilePage> {
     'Hypertension': false,
   };
 
+  final _profileService = UserProfileService();
   bool _isLoading = true;
+  bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
-    _loadSavedProfile();
+    _loadProfile();
   }
 
-  /// Load saved health profile from SharedPreferences
-  Future<void> _loadSavedProfile() async {
+  /// Tải dữ liệu từ Service (Nhánh master)
+  Future<void> _loadProfile() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final profileJson = prefs.getString('health_profile');
-
-      if (profileJson != null) {
-        final decoded = jsonDecode(profileJson) as Map<String, dynamic>;
-        
+      final conditions = await _profileService.getHealthConditions();
+      if (mounted) {
         setState(() {
-          // Update _healthConditions with saved values
-          _healthConditions['Diabetes'] = decoded['Diabetes'] as bool? ?? false;
-          _healthConditions['Kidney Disease'] = decoded['Kidney Disease'] as bool? ?? false;
-          _healthConditions['Pregnancy'] = decoded['Pregnancy'] as bool? ?? false;
-          _healthConditions['Peanut Allergy'] = decoded['Peanut Allergy'] as bool? ?? false;
-          _healthConditions['Hypertension'] = decoded['Hypertension'] as bool? ?? false;
+          for (var key in _healthConditions.keys) {
+            _healthConditions[key] = conditions.contains(key);
+          }
+          _isLoading = false;
         });
       }
     } catch (e) {
       debugPrint("Error loading health profile: $e");
-    } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
-  /// Save health profile to SharedPreferences
+  /// Lưu dữ liệu qua Service (Nhánh master)
   Future<void> _saveProfile() async {
-    final prefs = await SharedPreferences.getInstance();
-    final profileJson = jsonEncode(_healthConditions);
-    await prefs.setString('health_profile', profileJson);
+    setState(() => _isSaving = true);
 
-    if (!mounted) return;
+    final selected = _healthConditions.entries
+        .where((e) => e.value)
+        .map((e) => e.key)
+        .toList();
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Health profile saved successfully!'),
-        backgroundColor: Colors.green,
-      ),
-    );
+    try {
+      await _profileService.updateHealthConditions(selected);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Health profile saved successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to save: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return Container(
-        decoration: const BoxDecoration(color: AppColors.scaffoldBackgroundLight),
-        child: const Center(
-          child: CircularProgressIndicator(
-            color: AppColors.primaryGreen,
-          ),
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.primaryGreen),
         ),
       );
     }
+
     return Container(
       decoration: const BoxDecoration(color: AppColors.scaffoldBackgroundLight),
       child: SafeArea(
@@ -91,7 +105,7 @@ class _ProfilePageState extends State<ProfilePage> {
               Text(
                 'PERSONALIZATION',
                 style: TextStyle(
-                  color: AppColors.primaryGreen.withValues(alpha: 0.6),
+                  color: AppColors.primaryGreen.withOpacity(0.6),
                   fontWeight: FontWeight.w900,
                   fontSize: 12,
                   letterSpacing: 2.0,
@@ -106,7 +120,6 @@ class _ProfilePageState extends State<ProfilePage> {
                     fontFamily: 'Outfit',
                     fontWeight: FontWeight.w900,
                     color: AppColors.textPrimary,
-
                   ),
                   children: [
                     const TextSpan(text: 'Your Health,\n'),
@@ -122,7 +135,6 @@ class _ProfilePageState extends State<ProfilePage> {
                 'Select your medical profile so we can filter ingredients that matter most to your vitality.',
                 style: TextStyle(
                   color: AppColors.textSecondary,
-
                   fontSize: 15,
                   height: 1.5,
                   fontWeight: FontWeight.w500,
@@ -130,50 +142,46 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               const SizedBox(height: 40),
 
-              // Health Options List
+              // Danh sách các lựa chọn sức khỏe
               _HealthOptionCard(
                 title: 'Diabetes',
                 subtitle: 'Monitors sugar and carb levels',
                 icon: Icons.opacity_rounded,
                 value: _healthConditions['Diabetes']!,
-                onChanged: (val) =>
-                    setState(() => _healthConditions['Diabetes'] = val),
+                onChanged: (val) => setState(() => _healthConditions['Diabetes'] = val),
               ),
               _HealthOptionCard(
                 title: 'Kidney Disease',
                 subtitle: 'Tracks sodium and potassium intake',
                 icon: Icons.spa_rounded,
                 value: _healthConditions['Kidney Disease']!,
-                onChanged: (val) =>
-                    setState(() => _healthConditions['Kidney Disease'] = val),
+                onChanged: (val) => setState(() => _healthConditions['Kidney Disease'] = val),
               ),
               _HealthOptionCard(
                 title: 'Pregnancy',
                 subtitle: 'Alerts for raw and unpasteurized items',
                 icon: Icons.pregnant_woman_rounded,
                 value: _healthConditions['Pregnancy']!,
-                onChanged: (val) =>
-                    setState(() => _healthConditions['Pregnancy'] = val),
+                onChanged: (val) => setState(() => _healthConditions['Pregnancy'] = val),
               ),
               _HealthOptionCard(
                 title: 'Peanut Allergy',
                 subtitle: 'Strict warnings for nut derivatives',
                 icon: Icons.emergency_rounded,
                 value: _healthConditions['Peanut Allergy']!,
-                onChanged: (val) =>
-                    setState(() => _healthConditions['Peanut Allergy'] = val),
+                onChanged: (val) => setState(() => _healthConditions['Peanut Allergy'] = val),
               ),
               _HealthOptionCard(
                 title: 'Hypertension',
                 subtitle: 'Monitors sodium and heart-health indicators',
                 icon: Icons.favorite_rounded,
                 value: _healthConditions['Hypertension']!,
-                onChanged: (val) =>
-                    setState(() => _healthConditions['Hypertension'] = val),
+                onChanged: (val) => setState(() => _healthConditions['Hypertension'] = val),
               ),
 
               const SizedBox(height: 40),
 
+              // Nút Lưu Hồ Sơ
               Container(
                 width: double.infinity,
                 height: 64,
@@ -184,14 +192,14 @@ class _ProfilePageState extends State<ProfilePage> {
                   borderRadius: BorderRadius.circular(100),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.primaryGreen.withValues(alpha: 0.2),
+                      color: AppColors.primaryGreen.withOpacity(0.2),
                       blurRadius: 20,
                       offset: const Offset(0, 10),
                     ),
                   ],
                 ),
                 child: ElevatedButton(
-                  onPressed: _saveProfile,
+                  onPressed: _isSaving ? null : _saveProfile,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.transparent,
                     shadowColor: Colors.transparent,
@@ -199,14 +207,20 @@ class _ProfilePageState extends State<ProfilePage> {
                       borderRadius: BorderRadius.circular(100),
                     ),
                   ),
-                  child: const Text(
-                    'Save Profile & Continue',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
+                  child: _isSaving 
+                    ? const SizedBox(
+                        height: 24, 
+                        width: 24, 
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
+                      )
+                    : const Text(
+                        'Save Profile & Continue',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
                 ),
               ),
 
@@ -216,9 +230,28 @@ class _ProfilePageState extends State<ProfilePage> {
                   'You can update these preferences anytime in settings.',
                   style: TextStyle(
                     color: AppColors.mutedText,
-
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Nút Settings
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const SettingsPage()),
+                    );
+                  },
+                  icon: const Icon(Icons.settings),
+                  label: const Text('Settings'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    side: BorderSide(color: AppColors.primaryGreen),
                   ),
                 ),
               ),
@@ -255,7 +288,7 @@ class _HealthOptionCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
+            color: Colors.black.withOpacity(0.03),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
@@ -280,7 +313,6 @@ class _HealthOptionCard extends StatelessWidget {
                   title,
                   style: const TextStyle(
                     color: AppColors.textPrimary,
-
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
                   ),
@@ -290,7 +322,6 @@ class _HealthOptionCard extends StatelessWidget {
                   subtitle,
                   style: const TextStyle(
                     color: AppColors.textSecondary,
-
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),
@@ -302,7 +333,7 @@ class _HealthOptionCard extends StatelessWidget {
             value: value,
             onChanged: onChanged,
             activeColor: AppColors.primaryGreen,
-            activeTrackColor: AppColors.primaryGreen.withValues(alpha: 0.2),
+            activeTrackColor: AppColors.primaryGreen.withOpacity(0.2),
             inactiveThumbColor: Colors.white,
             inactiveTrackColor: const Color(0xFFEEEEEE),
           ),
