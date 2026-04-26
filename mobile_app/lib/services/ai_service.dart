@@ -3,41 +3,65 @@ import 'package:flutter/services.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 
 class AIService {
+  // Singleton pattern
+  static final AIService _instance = AIService._internal();
+
   Interpreter? _interpreter;
   Map<String, dynamic>? _vocab;
   List<String>? _labels;
   final int _maxLength = 8; // Phải khớp với max_length lúc train
+  bool _isInitialized = false;
 
-  // 1. Khởi tạo AI (Gọi hàm này khi mở App)
+  // Private constructor
+  AIService._internal();
+
+  // Factory constructor - trả về instance duy nhất
+  factory AIService() {
+    return _instance;
+  }
+
+  // Getter để kiểm tra trạng thái khởi tạo
+  bool get isInitialized => _isInitialized;
+
+  /// Khởi tạo AI (Gọi hàm này ở main.dart khi mở App)
   Future<void> initAI() async {
+    if (_isInitialized) {
+      print("AI Service: Already initialized!");
+      return;
+    }
+
     try {
       // Load Model
       _interpreter = await Interpreter.fromAsset('assets/ai/safebite_model.tflite');
-      
+
       // Load Vocab
       String vocabJson = await rootBundle.loadString('assets/ai/vocab.json');
       _vocab = json.decode(vocabJson);
-      
+
       // Load Labels
       String labelsJson = await rootBundle.loadString('assets/ai/labels.json');
       _labels = List<String>.from(json.decode(labelsJson));
-      
-      print("AI Service: Ready!");
+
+      _isInitialized = true;
+      print("AI Service: Successfully initialized!");
     } catch (e) {
+      _isInitialized = false;
       print("AI Service Error: $e");
+      rethrow;
     }
   }
 
-  // 2. Hàm dự đoán trả về cả label và confidence
+  /// Hàm dự đoán - trả về Map chứa 'label' và 'confidence'
   Map<String, dynamic> predict(String text) {
-    if (_interpreter == null || _vocab == null || _labels == null) {
+    // Kiểm tra khởi tạo (Hợp nhất từ develop & master)
+    if (!_isInitialized || _interpreter == null || _vocab == null || _labels == null) {
       return {"label": "Unknown", "confidence": 0.0};
     }
 
     // Tiền xử lý: Chuyển text thành mảng số (Tokenization)
     List<double> input = _tokenize(text);
 
-    // Chuẩn bị đầu ra (Mảng chứa 9 xác suất)
+    // Chuẩn bị đầu ra (Mảng chứa số lượng nhãn xác suất)
     var output = List<double>.filled(_labels!.length, 0).reshape([1, _labels!.length]);
 
     // Chạy AI
@@ -66,9 +90,20 @@ class AIService {
     };
   }
 
-  // Hàm biến chữ thành số (Phải giống hệt lúc train bằng Python)
+  /// Hàm biến chữ thành số (Tokenization)
   List<double> _tokenize(String text) {
-    List<String> words = text.toLowerCase().split(' ');
+    // Chuyển về chữ thường
+    String cleanText = text.toLowerCase();
+
+    // Loại bỏ các ký tự đặc biệt
+    cleanText = cleanText.replaceAll(RegExp(r'[^\w\s]'), ' ');
+
+    // Split thành từng từ
+    List<String> words = cleanText.split(RegExp(r'\s+'));
+
+    // Loại bỏ các từ rỗng
+    words = words.where((word) => word.isNotEmpty).toList();
+
     List<double> sequence = [];
 
     for (var word in words) {
@@ -76,11 +111,12 @@ class AIService {
       sequence.add((_vocab![word] ?? 1).toDouble());
     }
 
-    // Padding cho đủ 8 phần tử
+    // Padding cho đủ _maxLength phần tử với giá trị 0
     while (sequence.length < _maxLength) {
       sequence.add(0.0);
     }
-    
+
+    // Cắt bỏ các phần tử vượt quá _maxLength
     return sequence.sublist(0, _maxLength);
   }
 }

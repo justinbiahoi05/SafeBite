@@ -6,16 +6,30 @@ import 'firebase_options.dart';
 import 'package:mobile_app/src/core/theme/app_colors.dart';
 import 'package:mobile_app/services/onboarding_service.dart';
 
+import 'services/ai_service.dart';
 import 'src/modules/onboarding/presentation/onboarding_screen.dart';
 import 'src/modules/getstart/presentation/get_started_screen.dart';
 import 'src/modules/auth/presentation/login_screen.dart';
 import 'src/modules/home/presentation/home_screen.dart';
 
 void main() async {
+  // Đảm bảo Flutter engine đã khởi tạo trước khi gọi các plugin Native (Firebase, AI)
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // 1. Khởi tạo Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  
+  // 2. Khởi tạo AI Service (Model TFLite)
+  // Bọc trong try-catch để tránh crash app nếu model không load được
+  try {
+    await AIService().initAI();
+    print("Main: AI Service initialized successfully!");
+  } catch (e) {
+    print("Main: Failed to initialize AI Service - $e");
+  }
+  
   runApp(const MyApp());
 }
 
@@ -93,14 +107,14 @@ class _AuthWrapperState extends State<AuthWrapper> {
           );
         }
 
+        // Nếu đã đăng nhập (Firebase có data) -> Vào Home
         if (snapshot.hasData) {
-          // User is logged in, go to home
           return const HomeScreen();
         }
 
-        // User not logged in
+        // Nếu chưa đăng nhập:
+        // 1. Kiểm tra Onboarding (cho người dùng mới)
         if (!_isOnboardingComplete) {
-          // First time user, show onboarding
           return OnboardingScreen(
             onComplete: () async {
               await OnboardingService.setOnboardingComplete();
@@ -111,7 +125,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
           );
         }
 
-        // Returning user, show login
+        // 2. Nếu đã xem Onboarding rồi thì hiện màn Login
         return const LoginScreen();
       },
     );

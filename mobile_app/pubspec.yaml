@@ -1,26 +1,41 @@
 name: mobile_app
 description: "A new Flutter project."
-publish_to: 'none' 
+publish_to: 'none'
+
+version: 1.0.0+1
 
 environment:
   sdk: ^3.9.0
-  
+
 dependencies:
   flutter:
     sdk: flutter
-  tflite_flutter: ^0.11.0
   cupertino_icons: ^1.0.8
-  camera: ^0.12.0+1
-  path_provider: ^2.1.5
-  path: ^1.9.1
+
+  # Machine Learning (Sử dụng bản git để đảm bảo tương thích tflite mới nhất)
+  tflite_flutter:
+    git:
+      url: https://github.com/tensorflow/flutter-tflite.git
+
+  # Firebase & Auth
   firebase_core: ^3.12.1
   firebase_auth: ^5.3.4
   cloud_firestore: ^5.6.6
   firebase_storage: ^12.4.1
   google_sign_in: ^6.2.0
-  image_picker: ^1.0.0
-  fl_chart: ^0.69.0
+
+  # Camera & OCR
+  camera: ^0.12.0+1
+  google_mlkit_text_recognition: ^0.15.1
+  google_mlkit_translation: ^0.13.0
+  image_picker: ^1.0.7
+  image: ^4.2.0
+
+  # Utilities
+  path_provider: ^2.1.5
+  path: ^1.9.1
   shared_preferences: ^2.3.5
+  fl_chart: ^0.69.0
 
 dev_dependencies:
   flutter_test:
@@ -28,12 +43,11 @@ dev_dependencies:
   flutter_lints: ^5.0.0
 
 flutter:
-  assets:
-      - assets/app_image/onboard.png
-      - assets/app_image/getstart.png
-      - assets/ai/safebite_model.tflite
-      - assets/ai/vocab.json
-      - assets/ai/labels.json
-
   uses-material-design: true
-
+  assets:
+    - assets/app_image/onboard.png
+    - assets/app_image/getstart.png
+    - assets/ai/safebite_model.tflite
+    - assets/ai/vocab.json
+    - assets/ai/labels.json
+    - assets/ai/ingredients_db.json
