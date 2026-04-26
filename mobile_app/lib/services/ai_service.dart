@@ -28,13 +28,15 @@ class AIService {
     }
   }
 
-  // 2. Hàm dự đoán 
-  String predict(String text) {
-    if (_interpreter == null || _vocab == null || _labels == null) return "Unknown";
+  // 2. Hàm dự đoán trả về cả label và confidence
+  Map<String, dynamic> predict(String text) {
+    if (_interpreter == null || _vocab == null || _labels == null) {
+      return {"label": "Unknown", "confidence": 0.0};
+    }
 
     // Tiền xử lý: Chuyển text thành mảng số (Tokenization)
     List<double> input = _tokenize(text);
-    
+
     // Chuẩn bị đầu ra (Mảng chứa 9 xác suất)
     var output = List<double>.filled(_labels!.length, 0).reshape([1, _labels!.length]);
 
@@ -45,7 +47,7 @@ class AIService {
     List<double> results = output[0];
     int maxIdx = 0;
     double maxScore = 0;
-    
+
     for (int i = 0; i < results.length; i++) {
       if (results[i] > maxScore) {
         maxScore = results[i];
@@ -54,9 +56,14 @@ class AIService {
     }
 
     // Nếu AI quá phân vân (dưới 40%), báo unknown cho an toàn
-    if (maxScore < 0.4) return "Unknown";
+    if (maxScore < 0.4) {
+      return {"label": "Unknown", "confidence": maxScore};
+    }
 
-    return _labels![maxIdx];
+    return {
+      "label": _labels![maxIdx],
+      "confidence": maxScore
+    };
   }
 
   // Hàm biến chữ thành số (Phải giống hệt lúc train bằng Python)

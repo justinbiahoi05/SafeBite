@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "47011811529",
+    "project_id": "safebite-c7925",
+    "storage_bucket": "safebite-c7925.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:47011811529:android:6d16605a94dc1075dffd18",
+        "android_client_info": {
+          "package_name": "com.example.mobile_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "47011811529-vmgd43r7ga0v86hg354f29r1ah36826c.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.mobile_app",
+            "certificate_hash": "082452b1fac43ab1bb846c955c02d9e55799f66d"
+          }
+        },
+        {
+          "client_id": "47011811529-1ae03dvr4mt2nanoen2vjdh5f13k9nfv.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCFdYyb4yCRMZFBnZBJxbPaZCVMVKHs-Hk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "47011811529-1ae03dvr4mt2nanoen2vjdh5f13k9nfv.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "47011811529-c7b0893ld9aeic1v1i1tm842brtvm71b.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.mobileApp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

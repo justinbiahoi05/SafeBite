@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
+import 'package:mobile_app/services/user_profile_service.dart';
+import 'package:mobile_app/src/core/theme/app_colors.dart';
+import 'package:mobile_app/src/modules/home/presentation/pages/settings_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -17,8 +19,78 @@ class _ProfilePageState extends State<ProfilePage> {
     'Hypertension': false,
   };
 
+  final _profileService = UserProfileService();
+  bool _isLoading = true;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    try {
+      final conditions = await _profileService.getHealthConditions();
+      if (mounted) {
+        setState(() {
+          for (var key in _healthConditions.keys) {
+            _healthConditions[key] = conditions.contains(key);
+          }
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _saveProfile() async {
+    setState(() => _isSaving = true);
+
+    final selected = _healthConditions.entries
+        .where((e) => e.value)
+        .map((e) => e.key)
+        .toList();
+
+    try {
+      await _profileService.updateHealthConditions(selected);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Profile saved!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to save: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.accent),
+        ),
+      );
+    }
+
     return Container(
       decoration: const BoxDecoration(color: AppColors.scaffoldBackgroundLight),
       child: SafeArea(
@@ -130,9 +202,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ],
                 ),
                 child: ElevatedButton(
-                  onPressed: () {
-                    // Save logic
-                  },
+                  onPressed: _isSaving ? null : _saveProfile,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.transparent,
                     shadowColor: Colors.transparent,
@@ -152,7 +222,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
 
               const SizedBox(height: 20),
-              const Center(
+              Center(
                 child: Text(
                   'You can update these preferences anytime in settings.',
                   style: TextStyle(
@@ -160,6 +230,26 @@ class _ProfilePageState extends State<ProfilePage> {
 
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Settings Button
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const SettingsPage()),
+                    );
+                  },
+                  icon: const Icon(Icons.settings),
+                  label: const Text('Settings'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    side: BorderSide(color: AppColors.primaryGreen),
                   ),
                 ),
               ),

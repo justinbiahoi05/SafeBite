@@ -1,166 +1,228 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/theme/app_colors.dart';
+import 'package:mobile_app/services/scan_history_service.dart';
 
-class DashboardPage extends StatelessWidget {
+class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
 
   @override
+  State<DashboardPage> createState() => _DashboardPageState();
+}
+
+class _DashboardPageState extends State<DashboardPage> {
+  final User? _user = FirebaseAuth.instance.currentUser;
+
+  @override
   Widget build(BuildContext context) {
+    if (_user == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
     return Container(
       decoration: const BoxDecoration(color: AppColors.scaffoldBackgroundLight),
 
       child: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 32),
+        child: StreamBuilder<QuerySnapshot>(
+          stream: ScanHistoryService().getScans(),
+          builder: (context, snapshot) {
+            final scans = snapshot.data?.docs ?? [];
+            final total = scans.length;
+            final safe = scans.where((d) => d['result'] == 'safe').length;
+            final score = total > 0 ? ((safe / total) * 100).round() : 0;
 
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.accent.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(100),
-                ),
-                child: Text(
-                  'DAILY REPORT',
-                  style: TextStyle(
-                    color: AppColors.primaryGreen,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 10,
-                    letterSpacing: 1.0,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              RichText(
-                text: TextSpan(
-                  style: const TextStyle(
-                    fontSize: 34,
-                    height: 1.1,
-                    fontWeight: FontWeight.w900,
-                    color: AppColors.textPrimary,
-
-                    fontFamily: 'Outfit',
-                  ),
-                  children: [
-                    const TextSpan(text: 'Nourishing\n'),
-                    TextSpan(
-                      text: 'your vitality.',
-                      style: TextStyle(color: AppColors.primaryGreen),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                "Today's intake shows 92% purity. Your gut health is thriving in the optimal greenhouse zone.",
-                style: TextStyle(
-                  color: AppColors.textSecondary,
-
-                  fontSize: 14,
-                  height: 1.5,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 24),
-              _SafetyScoreCard(),
-              const SizedBox(height: 24),
-
-              _IngredientsAnalyzedCard(),
-              const SizedBox(height: 24),
-
-              Row(
+            return SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: _StatCard(
-                      value: '84%',
-                      label: 'SUGAR-FREE STREAK',
-                      icon: Icons.show_chart_rounded,
-                      color: AppColors.forestGreen,
+                  const SizedBox(height: 32),
 
-                      textColor: Colors.white,
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _StatCard(
-                      value: '12',
-                      label: 'SMART TIPS',
-                      icon: Icons.wb_incandescent_outlined,
-                      color: AppColors.grayLight,
-
-                      textColor: AppColors.textPrimary,
-
+                    decoration: BoxDecoration(
+                      color: AppColors.accent.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(100),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 32),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Recent Scans',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w900,
-                      color: AppColors.textPrimary,
-
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {},
-                    child: const Text(
-                      'View Archive',
+                    child: Text(
+                      'DAILY REPORT',
                       style: TextStyle(
-                        color: AppColors.forestGreen,
-
-                        fontWeight: FontWeight.w700,
-                        fontSize: 12,
+                        color: AppColors.primaryGreen,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 10,
+                        letterSpacing: 1.0,
                       ),
                     ),
                   ),
+                  const SizedBox(height: 12),
+                  RichText(
+                    text: TextSpan(
+                      style: const TextStyle(
+                        fontSize: 34,
+                        height: 1.1,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.textPrimary,
+                        fontFamily: 'Outfit',
+                      ),
+                      children: [
+                        const TextSpan(text: 'Nourishing\n'),
+                        TextSpan(
+                          text: 'your vitality.',
+                          style: TextStyle(color: AppColors.primaryGreen),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Safety score: $score%. Keep scanning to improve your health journey!',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 14,
+                      height: 1.5,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  _SafetyScoreCard(
+                    score: score,
+                    totalScans: total,
+                    safeScans: safe,
+                  ),
+                  const SizedBox(height: 24),
+
+                  _IngredientsAnalyzedCard(totalScans: total),
+                  const SizedBox(height: 24),
+
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _StatCard(
+                          value: '$safe',
+                          label: 'SAFE SCANS',
+                          icon: Icons.eco_rounded,
+                          color: AppColors.forestGreen,
+                          textColor: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _StatCard(
+                          value: '${total - safe}',
+                          label: 'CAUTION',
+                          icon: Icons.warning_amber_rounded,
+                          color: AppColors.grayLight,
+                          textColor: AppColors.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 32),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Recent Scans',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {},
+                        child: const Text(
+                          'View Archive',
+                          style: TextStyle(
+                            color: AppColors.forestGreen,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  if (scans.isEmpty)
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      child: Center(
+                        child: Column(
+                          children: [
+                            Icon(Icons.document_scanner_outlined,
+                                size: 48, color: Colors.grey),
+                            const SizedBox(height: 12),
+                            Text(
+                              'No scans yet',
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Start scanning to see history',
+                              style: TextStyle(
+                                color: Colors.grey.shade400,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  else
+                    ...scans.take(5).map((doc) => _RecentScanItem(
+                          name: doc['result'] ?? 'Unknown',
+                          time: _formatTime(doc['createdAt']),
+                          tag: doc['result'] == 'safe' ? 'Safe' : 'Caution',
+                          icon: doc['result'] == 'safe'
+                              ? Icons.check_circle_rounded
+                              : Icons.warning_rounded,
+                          isSafe: doc['result'] == 'safe',
+                        )),
                 ],
               ),
-
-              _RecentScanItem(
-                name: 'Hass Avocado',
-                time: '2 hours ago',
-                tag: 'Organic',
-                icon: Icons.eco_rounded,
-                isSafe: true,
-              ),
-              _RecentScanItem(
-                name: 'Dark Cacao 85%',
-                time: '3 hours ago',
-                tag: 'Clean Label',
-                icon: Icons.check_circle_rounded,
-                isSafe: true,
-              ),
-              _RecentScanItem(
-                name: 'Wheat Pretzels',
-                time: 'Yesterday',
-                tag: 'Gluten Alert',
-                icon: Icons.warning_amber_rounded,
-                isSafe: false,
-              ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
   }
+
+  String _formatTime(dynamic timestamp) {
+    if (timestamp == null) return 'Recently';
+    if (timestamp is Timestamp) {
+      final diff = DateTime.now().difference(timestamp.toDate());
+      if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+      if (diff.inHours < 24) return '${diff.inHours}h ago';
+      if (diff.inDays < 7) return '${diff.inDays}d ago';
+      return '${(diff.inDays / 7).floor()}w ago';
+    }
+    return 'Recently';
+  }
 }
 
 class _SafetyScoreCard extends StatelessWidget {
+  final int score;
+  final int totalScans;
+  final int safeScans;
+
+  const _SafetyScoreCard({
+    required this.score,
+    required this.totalScans,
+    required this.safeScans,
+  });
+
   @override
   Widget build(BuildContext context) {
+    final status = score >= 80 ? 'Excellent' : score >= 60 ? 'Good' : 'Needs Work';
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -174,13 +236,12 @@ class _SafetyScoreCard extends StatelessWidget {
             height: 50,
             decoration: const BoxDecoration(
               color: AppColors.forestGreen,
-
               shape: BoxShape.circle,
             ),
             alignment: Alignment.center,
-            child: const Text(
-              '92',
-              style: TextStyle(
+            child: Text(
+              '$score',
+              style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w900,
                 fontSize: 18,
@@ -188,10 +249,10 @@ class _SafetyScoreCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 16),
-          const Column(
+          Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              const Text(
                 'SAFETY SCORE',
                 style: TextStyle(
                   color: Colors.black26,
@@ -201,14 +262,23 @@ class _SafetyScoreCard extends StatelessWidget {
                 ),
               ),
               Text(
-                'Excellent',
-                style: TextStyle(
+                status,
+                style: const TextStyle(
                   color: Color(0xFF1A1A1A),
                   fontSize: 18,
                   fontWeight: FontWeight.w900,
                 ),
               ),
             ],
+          ),
+          const Spacer(),
+          Text(
+            '$safeScans/$totalScans',
+            style: const TextStyle(
+              color: Colors.black38,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
@@ -217,7 +287,9 @@ class _SafetyScoreCard extends StatelessWidget {
 }
 
 class _IngredientsAnalyzedCard extends StatelessWidget {
-  @override
+  final int totalScans;
+
+  const _IngredientsAnalyzedCard({required this.totalScans});
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(24),
@@ -247,8 +319,10 @@ class _IngredientsAnalyzedCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
-            "You've scanned 14 items today. All were free from your flagged allergens.",
+          Text(
+            totalScans > 0
+                ? "You've scanned $totalScans items. Keep it up!"
+                : 'Start scanning to track your food safety.',
             style: TextStyle(
               color: Color(0xFF666666),
               fontSize: 13,
@@ -256,10 +330,6 @@ class _IngredientsAnalyzedCard extends StatelessWidget {
               fontWeight: FontWeight.w500,
             ),
           ),
-          const SizedBox(height: 24),
-          _MiniTag(label: 'Organic Kale', status: 'Safe'),
-          const SizedBox(height: 8),
-          _MiniTag(label: 'Almond Milk', status: 'Safe'),
         ],
       ),
     );
