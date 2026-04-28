@@ -7,13 +7,14 @@ import 'package:mobile_app/src/core/theme/app_colors.dart';
 import 'package:mobile_app/services/onboarding_service.dart';
 
 import 'services/ai_service.dart';
+import 'services/health_logic.dart'; // THÊM IMPORT NÀY
 import 'src/modules/onboarding/presentation/onboarding_screen.dart';
 import 'src/modules/getstart/presentation/get_started_screen.dart';
 import 'src/modules/auth/presentation/login_screen.dart';
 import 'src/modules/home/presentation/home_screen.dart';
 
 void main() async {
-  // Đảm bảo Flutter engine đã khởi tạo trước khi gọi các plugin Native (Firebase, AI)
+  // Đảm bảo Flutter engine đã khởi tạo trước khi gọi các plugin Native
   WidgetsFlutterBinding.ensureInitialized();
   
   // 1. Khởi tạo Firebase
@@ -21,13 +22,17 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   
-  // 2. Khởi tạo AI Service (Model TFLite)
-  // Bọc trong try-catch để tránh crash app nếu model không load được
+  // 2. Khởi tạo các dịch vụ AI và Dữ liệu y khoa
   try {
+    // Khởi tạo bộ não AI (Model TFLite)
     await AIService().initAI();
-    print("Main: AI Service initialized successfully!");
+    
+    // Khởi tạo Ma trận logic 16 bệnh lý (File JSON của Hoàng)
+    await HealthLogic.loadRawDb(); 
+    
+    print("Main: All Services initialized successfully!");
   } catch (e) {
-    print("Main: Failed to initialize AI Service - $e");
+    print("Main: Failed to initialize services - $e");
   }
   
   runApp(const MyApp());
@@ -49,9 +54,11 @@ class MyApp extends StatelessWidget {
           brightness: Brightness.dark,
         ),
         scaffoldBackgroundColor: AppColors.background,
+        // Cấu hình Font chữ mặc định cho toàn App
         textTheme: Typography.whiteMountainView.apply(
           bodyColor: Colors.white,
           displayColor: Colors.white,
+          fontFamily: 'Inter', 
         ),
       ),
       home: const AuthWrapper(),
@@ -88,6 +95,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
 
   @override
   Widget build(BuildContext context) {
+    // Màn hình chờ khi đang kiểm tra dữ liệu
     if (_isLoading) {
       return const Scaffold(
         body: Center(
@@ -99,6 +107,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
+        // Đang kết nối với Firebase
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             body: Center(
@@ -107,13 +116,14 @@ class _AuthWrapperState extends State<AuthWrapper> {
           );
         }
 
-        // Nếu đã đăng nhập (Firebase có data) -> Vào Home
+        // LUỒNG ĐIỀU HƯỚNG THÔNG MINH:
+        
+        // 1. Nếu đã đăng nhập (Firebase có User) -> Vào thẳng màn hình chính
         if (snapshot.hasData) {
           return const HomeScreen();
         }
 
-        // Nếu chưa đăng nhập:
-        // 1. Kiểm tra Onboarding (cho người dùng mới)
+        // 2. Nếu chưa đăng nhập và là người dùng mới -> Xem giới thiệu (Onboarding)
         if (!_isOnboardingComplete) {
           return OnboardingScreen(
             onComplete: () async {
@@ -125,7 +135,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
           );
         }
 
-        // 2. Nếu đã xem Onboarding rồi thì hiện màn Login
+        // 3. Nếu đã xem giới thiệu nhưng chưa đăng nhập -> Vào màn Login
         return const LoginScreen();
       },
     );

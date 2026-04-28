@@ -1,26 +1,21 @@
 {
-  "sugar": ["diabetes"],
-  "glucose": ["diabetes"],
-  "fructose": ["diabetes"],
-  "corn syrup": ["diabetes"],
-  "high fructose corn syrup": ["diabetes"],
-  
-  "sodium": ["hypertension", "kidney disease"],
-  "salt": ["hypertension", "kidney disease"],
-  "msg": ["hypertension"],
-  "monosodium glutamate": ["hypertension"],
-  
-  "peanut": ["peanut allergy"],
-  "peanut oil": ["peanut allergy"],
-  "groundnut": ["peanut allergy"],
-  "arachis": ["peanut allergy"],
-  
-  "raw milk": ["pregnancy"],
-  "unpasteurized": ["pregnancy"],
-  "soft cheese": ["pregnancy"],
-  "unpasteurized cheese": ["pregnancy"],
-  
-  "potassium": ["kidney disease"],
-  "phosphate": ["kidney disease"],
-  "phosphorus": ["kidney disease"]
+  "sugar": ["diabetes", "keto diet", "skin health", "children"],
+  "glucose": ["diabetes", "keto diet"],
+  "fructose": ["diabetes", "gout"],
+  "aspartame": ["diabetes", "pregnancy", "ibs"],
+  "sodium": ["kidney disease", "hypertension", "gout", "heart disease"],
+  "salt": ["kidney disease", "hypertension", "heart disease"],
+  "msg": ["hypertension", "gout", "pregnancy", "children"],
+  "monosodium glutamate": ["hypertension", "gout"],
+  "peanut": ["nut allergy"],
+  "milk": ["lactose intolerance"],
+  "wheat": ["celiac disease"],
+  "caffeine": ["pregnancy", "hypertension", "gastritis"],
+  "chilli": ["gastritis", "pregnancy"],
+  "pepper": ["gastritis"],
+  "lard": ["vegan", "heart disease", "skin health"],
+  "animal fat": ["vegan", "heart disease"],
+  "e102": ["children", "asthma", "skin health"],
+  "e211": ["asthma", "pregnancy"],
+  "sulphite": ["asthma"]
 }

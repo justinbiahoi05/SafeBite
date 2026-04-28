@@ -1,460 +1,280 @@
 import 'package:flutter/material.dart';
-import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:mobile_app/services/ai_service.dart';
-import 'package:mobile_app/services/health_logic.dart';
+import 'package:flutter/services.dart'; // Thư viện Rung
+import '../../../../../services/ai_service.dart';
+import '../../../../../services/health_logic.dart';
+import '../../../../../services/user_profile_service.dart';
+import '../../../../../services/string_helper.dart';
+import '../../../../../services/scan_history_service.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class ScanResultPage extends StatefulWidget {
-  final String text;
-
-  const ScanResultPage({super.key, required this.text});
+  final String rawText;
+  const ScanResultPage({super.key, required this.rawText});
 
   @override
   State<ScanResultPage> createState() => _ScanResultPageState();
 }
 
 class _ScanResultPageState extends State<ScanResultPage> {
-  late TextEditingController _editController;
-  String _resultLevel = "Safe";
-  List<String> _detectedIngredients = [];
-  List<String> _dangerousIngredients = [];
-  List<String> _reasons = [];
-  Map<String, bool> _userProfile = {};
-  bool _isAnalyzing = false;
-  bool _isProfileLoaded = false;
+  final AIService _ai = AIService();
+  List<Map<String, String>> _analyzedResults = [];
+  List<String> _userConditions = [];
+  
+  bool _isEditing = true; 
+  bool _isAnalyzing = false; 
+  bool _hasDanger = false;
+  
+  final TextEditingController _nameController = TextEditingController();
+  late TextEditingController _textController;
 
   @override
   void initState() {
     super.initState();
-    _editController = TextEditingController(text: widget.text);
-    _loadProfileAndAnalyze();
+    _textController = TextEditingController(text: widget.rawText.replaceAll('\n', ' '));
   }
 
   @override
   void dispose() {
-    _editController.dispose();
+    _nameController.dispose();
+    _textController.dispose();
     super.dispose();
   }
 
-  /// Load health profile from SharedPreferences before analysis
-  Future<void> _loadProfileAndAnalyze() async {
-    debugPrint("=== LOADING PROFILE ===");
-    setState(() => _isAnalyzing = true);
+  Future<void> _runAIAnalysis() async {
+    print("DEBUG 1: Nút bấm đã nhận, bắt đầu hàm _runAIAnalysis");
+
+    if (_nameController.text.trim().isEmpty) {
+      print("DEBUG: Tên sản phẩm trống");
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please enter a product name!")));
+      return;
+    }
 
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final profileJson = prefs.getString('health_profile');
+      setState(() {
+        _isEditing = false;
+        _isAnalyzing = true;
+      });
 
-      if (profileJson != null) {
-        final decoded = jsonDecode(profileJson) as Map<String, dynamic>;
-        _userProfile = decoded.map((key, value) => MapEntry(key, value as bool));
-      } else {
-        // No profile saved yet - treat as empty (all safe)
-        _userProfile = {};
+      print("DEBUG 2: Đang lấy Profile từ Firebase...");
+      // LỖI CÓ THỂ Ở ĐÂY: Nếu Firebase chưa đăng nhập hoặc Rules bị chặn
+      _userConditions = await UserProfileService().getHealthConditions();
+      print("DEBUG 3: Đã lấy được Profile: $_userConditions");
+
+      print("DEBUG 4: Đang tách từ...");
+      // LỖI CÓ THỂ Ở ĐÂY: Nếu StringHelper chưa có hàm extractCleanIngredients
+      List<String> cleanIngredients = _textController.text
+          .split(RegExp(r'[,\n\s]'))
+          .where((e) => e.trim().length > 2)
+          .toList();
+      print("DEBUG 5: Tách được ${cleanIngredients.length} chất");
+
+      List<Map<String, String>> temp = [];
+      for (var item in cleanIngredients) {
+        print("DEBUG 6: AI đang đoán chất: $item");
+        final pred = _ai.predict(item);
+        
+        // Dùng bộ lọc y khoa
+        String finalLabel = pred['label'] ?? 'unknown';
+        temp.add({'name': item, 'label': finalLabel});
       }
 
-      debugPrint("Loaded user profile: $_userProfile");
-      _isProfileLoaded = true;
+      _hasDanger = temp.any((item) => HealthLogic.isRiskForUser(
+        label: item['label']!, 
+        ingredientName: item['name']!, 
+        userConditions: _userConditions
+      ));
 
-      // Perform analysis after profile is loaded
-      debugPrint("Calling _performAnalysisInternal() after profile loaded");
-      _performAnalysisInternal();
-    } catch (e) {
-      debugPrint("Error loading profile: $e");
-      _userProfile = {};
-      _isProfileLoaded = true;
-      _performAnalysisInternal();
+      if (mounted) {
+        setState(() {
+          _isAnalyzing = false;
+          _analyzedResults = temp;
+        });
+        
+        print("DEBUG FINAL: Phân tích XONG. Nguy hiểm: $_hasDanger");
+
+        if (_hasDanger) {
+          _playDangerAlert();
+        }
+      }
+    } catch (e, stacktrace) {
+      // NẾU CÓ LỖI, DÒNG NÀY SẼ HIỆN MÀU ĐỎ TRONG CONSOLE
+      print("❌ LỖI NGHIÊM TRỌNG: $e");
+      print("❌ CHI TIẾT: $stacktrace");
+      setState(() => _isAnalyzing = false);
     }
   }
 
-  /// Internal analysis method that uses current controller text
-  void _performAnalysisInternal() {
-    debugPrint("=== AUTO ANALYSIS WHEN PAGE LOAD ===");
-    final String text = _editController.text;
-    debugPrint("Current text from controller: $text");
-
-    if (text.isEmpty) {
-      debugPrint("Text is empty, setting safe state");
-      setState(() {
-        _resultLevel = "Safe";
-        _detectedIngredients = [];
-        _dangerousIngredients = [];
-        _reasons = [];
-        _isAnalyzing = false;
-      });
-      return;
+  void _playDangerAlert() async {
+    debugPrint("Triggering Danger Vibration..."); // Để kiểm tra xem logic có chạy vào đây không
+    
+    for (int i = 0; i < 5; i++) {
+      // Lệnh rung mạnh nhất của hệ thống
+      HapticFeedback.vibrate(); 
+      
+      // Chờ một chút rồi rung tiếp để tạo hiệu ứng dồn dập
+      await Future.delayed(const Duration(milliseconds: 300));
+      
+      // Thêm lệnh này để chắc chắn motor rung được kích hoạt
+      HapticFeedback.heavyImpact(); 
     }
-
-    // Tokenize and predict using AIService
-    final Set<String> foundLabels = {};
-    final ai = AIService();
-
-    // Split text into words for AI prediction
-    List<String> words = text
-        .split(RegExp(r'[,.\s\n]'))
-        .where((w) => w.length > 2)
-        .toList();
-    
-    debugPrint("Tokenized words: $words");
-
-    for (var word in words) {
-      String label = ai.predict(word);
-      debugPrint("Word: $word -> Label: $label");
-      // Only include risk labels (not 'Unknown' or 'safe')
-      if (HealthLogic.isRiskLabel(label)) {
-        foundLabels.add(label);
-      }
-    }
-
-    debugPrint("Found labels: $foundLabels");
-
-    // Use HealthLogic for strict intersection analysis
-    final analysis = HealthLogic.analyze(
-      detectedLabels: foundLabels.toList(),
-      userProfile: _userProfile,
-    );
-    
-    debugPrint("HealthLogic.analyze result: $analysis");
-
-    setState(() {
-      _detectedIngredients = foundLabels.toList();
-      _resultLevel = analysis['level'];
-      _dangerousIngredients = List<String>.from(analysis['dangerousIngredients']);
-      _reasons = List<String>.from(analysis['reasons']);
-      _isAnalyzing = false;
-    });
-    
-    debugPrint("State update finished - _resultLevel: $_resultLevel");
   }
 
-  /// Re-analyze button handler - explicitly re-runs AI prediction
-  void _onReanalyze() {
-    debugPrint("=== MANUAL RE-ANALYZE BUTTON PRESSED ===");
-    debugPrint("Current text: ${_editController.text}");
-    debugPrint("_isAnalyzing before: $_isAnalyzing");
-    
-    if (_isAnalyzing) {
-      debugPrint("Already analyzing, returning...");
-      return;
-    }
-    
-    // Get current text directly from controller
-    final String currentText = _editController.text;
-    debugPrint("Processing text: $currentText");
-
-    // Update state to show loading
-    setState(() {
-      _isAnalyzing = true;
-    });
-    
-    debugPrint("_isAnalyzing after setState: true");
-
-    if (currentText.isEmpty) {
-      debugPrint("Text is empty, setting safe state");
-      setState(() {
-        _resultLevel = "Safe";
-        _detectedIngredients = [];
-        _dangerousIngredients = [];
-        _reasons = [];
-        _isAnalyzing = false;
-      });
-      return;
-    }
-
-    // Run AI prediction on current text
-    final Set<String> foundLabels = {};
-    final ai = AIService();
-    
-    List<String> words = currentText
-        .split(RegExp(r'[,.\s\n]'))
-        .where((w) => w.length > 2)
-        .toList();
-    
-    debugPrint("Tokenized words: $words");
-
-    for (var word in words) {
-      String label = ai.predict(word);
-      debugPrint("Word: $word -> Label: $label");
-      if (HealthLogic.isRiskLabel(label)) {
-        foundLabels.add(label);
-      }
-    }
-    
-    debugPrint("Found labels: $foundLabels");
-
-    // Run HealthLogic analysis
-    final analysis = HealthLogic.analyze(
-      detectedLabels: foundLabels.toList(),
-      userProfile: _userProfile,
+  Future<void> _saveToCloud() async {
+    await ScanHistoryService().addScan(
+      result: _hasDanger ? 'caution' : 'safe', confidence: 0.99,
+      ingredients: _analyzedResults.map((e) => e['name']!).toList(), 
+      productName: _nameController.text,
     );
-    
-    debugPrint("HealthLogic.analyze result: $analysis");
-
-    // Update UI with results
-    setState(() {
-      _detectedIngredients = foundLabels.toList();
-      _resultLevel = analysis['level'];
-      _dangerousIngredients = List<String>.from(analysis['dangerousIngredients']);
-      _reasons = List<String>.from(analysis['reasons']);
-      _isAnalyzing = false;
-    });
-    
-    debugPrint("State updated - _resultLevel: $_resultLevel");
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Saved to History!"), backgroundColor: AppColors.primaryGreen));
+      Navigator.pop(context);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Determine result color based on analysis level
-    Color resultColor = _resultLevel == "Danger" ? Colors.red : Colors.green;
+    Color headerColor = _hasDanger && !_isEditing ? Colors.red.shade600 : AppColors.scaffoldBackgroundLight;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: AppColors.scaffoldBackgroundLight,
       appBar: AppBar(
-        title: const Text(
-          "Kết quả phân tích",
-          style: TextStyle(color: Colors.white),
+        title: Text(
+          _isEditing ? "VERIFY DATA" : "ANALYSIS RESULT", 
+          style: TextStyle(color: _hasDanger && !_isEditing ? Colors.white : AppColors.textPrimary, fontWeight: FontWeight.w900, letterSpacing: 1.2, fontSize: 16)
         ),
-        backgroundColor: resultColor,
-        iconTheme: const IconThemeData(color: Colors.white),
+        backgroundColor: headerColor,
+        elevation: 0,
+        centerTitle: true,
+        iconTheme: IconThemeData(color: _hasDanger && !_isEditing ? Colors.white : AppColors.textPrimary),
       ),
-      body: Column(
-        children: [
-          // Header displaying result status
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(color: resultColor),
+      body: _isAnalyzing 
+        ? const Center(
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  _resultLevel == "Danger"
-                      ? Icons.warning
-                      : Icons.check_circle,
-                  color: Colors.white,
-                  size: 40,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  _resultLevel == "Danger"
-                      ? "CẢNH BÁO NGUY HIỂM"
-                      : "AN TOÀN CHO BẠN",
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                if (!_isProfileLoaded) ...[
-                  const SizedBox(height: 4),
-                  const Text(
-                    "Đang tải hồ sơ sức khỏe...",
-                    style: TextStyle(color: Colors.white70, fontSize: 12),
-                  ),
-                ],
+                CircularProgressIndicator(color: AppColors.primaryGreen),
+                SizedBox(height: 16),
+                Text("AI is processing...", style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.bold))
+              ],
+            )
+          )
+        : SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: _isEditing ? _buildEditState() : _buildResultState(),
+          ),
+    );
+  }
+
+  Widget _buildEditState() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text("STEP 1: PRODUCT NAME", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 1.0, color: AppColors.primaryGreen)),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _nameController,
+          style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
+          decoration: InputDecoration(
+            hintText: "e.g. Lay's Potato Chips",
+            filled: true, fillColor: Colors.white,
+            contentPadding: const EdgeInsets.all(20),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.grey.shade200)),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.primaryGreen, width: 2)),
+          ),
+        ),
+        
+        const SizedBox(height: 32),
+        
+        const Text("STEP 2: INGREDIENTS LIST", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 1.0, color: AppColors.primaryGreen)),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _textController,
+          maxLines: 8,
+          style: const TextStyle(color: AppColors.textPrimary, height: 1.6, fontSize: 15),
+          decoration: InputDecoration(
+            hintText: "Edit ingredients here...",
+            filled: true, fillColor: Colors.white,
+            contentPadding: const EdgeInsets.all(20),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.grey.shade200)),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.primaryGreen, width: 2)),
+          ),
+        ),
+        
+        const SizedBox(height: 40),
+        
+        SizedBox(
+          width: double.infinity, height: 60,
+          child: ElevatedButton(
+            onPressed: _runAIAnalysis,
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryGreen, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 0),
+            child: const Text("ANALYZE NOW", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: 1.0)),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildResultState() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (_hasDanger)
+          Container(
+            padding: const EdgeInsets.all(20), margin: const EdgeInsets.only(bottom: 32),
+            decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.red.shade200)),
+            child: const Row(
+              children: [
+                Icon(Icons.warning_rounded, color: Colors.red, size: 36),
+                SizedBox(width: 16),
+                Expanded(child: Text("WARNING: Unsafe ingredients detected for your health profile!", style: TextStyle(color: Colors.red, fontWeight: FontWeight.w800, fontSize: 15, height: 1.4))),
               ],
             ),
           ),
 
-          // Main content area
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Scanned text section
-                  const Text(
-                    "VĂN BẢN QUÉT ĐƯỢC (BẠN CÓ THỂ SỬA TẠI ĐÂY)",
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Large, high-contrast TextField
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey.shade300),
-                    ),
-                    child: TextField(
-                      controller: _editController,
-                      maxLines: 8,
-                      minLines: 4,
-                      // HIGH-CONTRAST: Black text on white background
-                      style: const TextStyle(
-                        color: Colors.black,
-                        fontSize: 16,
-                        height: 1.5,
-                      ),
-                      decoration: const InputDecoration(
-                        contentPadding: EdgeInsets.all(16),
-                        border: InputBorder.none,
-                        hintText: "Nhập hoặc chỉnh sửa văn bản...",
-                        hintStyle: TextStyle(color: Colors.grey),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Re-analyze button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        debugPrint("Button onPressed called!");
-                        _onReanalyze();
-                      },
-                      icon: _isAnalyzing
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Icon(Icons.refresh, color: Colors.white),
-                      label: Text(
-                        _isAnalyzing ? "ĐANG PHÂN TÍCH..." : "PHÂN TÍCH LẠI VĂN BẢN",
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blueAccent,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Detected ingredients section
-                  if (_detectedIngredients.isNotEmpty) ...[
-                    const Text(
-                      "AI PHÁT HIỆN CÁC CHẤT:",
-                      style: TextStyle(
-                        color: Colors.black87,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: _detectedIngredients.map((label) {
-                        bool isBad = _dangerousIngredients.contains(label);
-                        return Chip(
-                          label: Text(
-                            label,
-                            style: TextStyle(
-                              color: isBad ? Colors.red.shade800 : Colors.black87,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          backgroundColor:
-                              isBad ? Colors.red.shade50 : Colors.grey.shade100,
-                          side: BorderSide(
-                            color: isBad ? Colors.red.shade300 : Colors.grey.shade300,
-                          ),
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                        );
-                      }).toList(),
-                    ),
-                    const SizedBox(height: 20),
-                  ],
-
-                  // Warning details section
-                  if (_reasons.isNotEmpty) ...[
-                    const Text(
-                      "CHI TIẾT NGUY CƠ:",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        color: Colors.red,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    ..._reasons.map((r) => Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.red.shade50,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.red.shade200),
-                          ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Icon(
-                                Icons.warning_amber_rounded,
-                                color: Colors.red.shade700,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  r,
-                                  style: TextStyle(
-                                    color: Colors.red.shade900,
-                                    fontSize: 14,
-                                    height: 1.4,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        )),
-                  ],
-
-                  // Safe state message
-                  if (_resultLevel == "Safe" && _detectedIngredients.isEmpty)
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.green.shade50,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.green.shade200),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.check_circle_outline,
-                            color: Colors.green.shade700,
-                            size: 24,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              _userProfile.isEmpty || !_userProfile.values.any((v) => v)
-                                  ? "Không phát hiện chất nguy hiểm nào. Hãy cập nhật hồ sơ sức khỏe để được phân tích chính xác hơn."
-                                  : "Các thành phần phát hiện đều an toàn với hồ sơ sức khỏe của bạn.",
-                              style: TextStyle(
-                                color: Colors.green.shade900,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
-              ),
+        ..._analyzedResults.map((item) {
+          bool isDanger = HealthLogic.isRiskForUser(label: item['label']!, ingredientName: item['name']!, userConditions: _userConditions);
+          return Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white, borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: isDanger ? Colors.red.shade300 : Colors.grey.shade200),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
             ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(color: isDanger ? Colors.red.shade50 : AppColors.primaryGreen.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                  child: Icon(isDanger ? Icons.warning_amber_rounded : Icons.check_circle_outline, color: isDanger ? Colors.red : AppColors.primaryGreen, size: 24),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(item['name']!.toUpperCase(), style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w900, fontSize: 15, letterSpacing: 0.5)),
+                      const SizedBox(height: 4),
+                      Text(item['label']!.toUpperCase(), style: TextStyle(color: isDanger ? Colors.red : AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        }),
+
+        const SizedBox(height: 40),
+        SizedBox(
+          width: double.infinity, height: 60,
+          child: ElevatedButton.icon(
+            onPressed: _saveToCloud,
+            icon: const Icon(Icons.cloud_upload, color: Colors.white),
+            label: const Text("SAVE TO HISTORY", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
+            style: ElevatedButton.styleFrom(backgroundColor:  AppColors.primaryGreen, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 0),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

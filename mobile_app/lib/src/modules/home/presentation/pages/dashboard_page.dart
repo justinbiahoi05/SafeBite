@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/theme/app_colors.dart';
-import 'package:mobile_app/services/scan_history_service.dart';
+import '../../../../../services/scan_history_service.dart';
+import 'archive_page.dart'; // THÊM IMPORT NÀY
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -16,83 +17,32 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (_user == null) {
-      return const Center(child: CircularProgressIndicator());
-    }
+    if (_user == null) return const Center(child: CircularProgressIndicator());
 
     return Container(
       decoration: const BoxDecoration(color: AppColors.scaffoldBackgroundLight),
-
       child: SafeArea(
         child: StreamBuilder<QuerySnapshot>(
           stream: ScanHistoryService().getScans(),
           builder: (context, snapshot) {
             final scans = snapshot.data?.docs ?? [];
             final total = scans.length;
-            final safe = scans.where((d) => d['result'] == 'safe').length;
-            final score = total > 0 ? ((safe / total) * 100).round() : 0;
+            final safeScans = scans.where((d) => d['result'] == 'safe').length;
+            final cautionScans = total - safeScans;
+            final score = total > 0 ? ((safeScans / total) * 100).round() : 100;
 
             return SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 32),
-
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.accent.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(100),
-                    ),
-                    child: Text(
-                      'DAILY REPORT',
-                      style: TextStyle(
-                        color: AppColors.primaryGreen,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 10,
-                        letterSpacing: 1.0,
-                      ),
-                    ),
-                  ),
+                  const SizedBox(height: 16),
+                  _buildHeader(),
                   const SizedBox(height: 12),
-                  RichText(
-                    text: TextSpan(
-                      style: const TextStyle(
-                        fontSize: 34,
-                        height: 1.1,
-                        fontWeight: FontWeight.w900,
-                        color: AppColors.textPrimary,
-                        fontFamily: 'Outfit',
-                      ),
-                      children: [
-                        const TextSpan(text: 'Nourishing\n'),
-                        TextSpan(
-                          text: 'your vitality.',
-                          style: TextStyle(color: AppColors.primaryGreen),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Safety score: $score%. Keep scanning to improve your health journey!',
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 14,
-                      height: 1.5,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
+                  _buildVitalityText(score),
                   const SizedBox(height: 24),
-                  _SafetyScoreCard(
-                    score: score,
-                    totalScans: total,
-                    safeScans: safe,
-                  ),
+                  
+                  _SafetyScoreCard(score: score, totalScans: total, safeScans: safeScans),
                   const SizedBox(height: 24),
 
                   _IngredientsAnalyzedCard(totalScans: total),
@@ -102,90 +52,51 @@ class _DashboardPageState extends State<DashboardPage> {
                     children: [
                       Expanded(
                         child: _StatCard(
-                          value: '$safe',
+                          value: '$safeScans',
                           label: 'SAFE SCANS',
                           icon: Icons.eco_rounded,
-                          color: AppColors.forestGreen,
-                          textColor: Colors.white,
+                          color: Colors.white,
+                          textColor: AppColors.primaryGreen,
                         ),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
                         child: _StatCard(
-                          value: '${total - safe}',
+                          value: '$cautionScans',
                           label: 'CAUTION',
                           icon: Icons.warning_amber_rounded,
-                          color: AppColors.grayLight,
-                          textColor: AppColors.textPrimary,
+                          color: Colors.white,
+                          textColor: Colors.orange,
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 32),
-
+                  
+                  // ĐÃ SỬA NÚT VIEW ARCHIVE Ở ĐÂY
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Recent Scans',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
+                      const Text('Recent Scans', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.textPrimary)),
                       TextButton(
-                        onPressed: () {},
-                        child: const Text(
-                          'View Archive',
-                          style: TextStyle(
-                            color: AppColors.forestGreen,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 12,
-                          ),
-                        ),
+                        onPressed: () {
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const ArchivePage()));
+                        }, 
+                        child: const Text('View Archive', style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.w700, fontSize: 12))
                       ),
                     ],
                   ),
-
+                  
                   if (scans.isEmpty)
-                    Container(
-                      padding: const EdgeInsets.all(24),
-                      child: Center(
-                        child: Column(
-                          children: [
-                            Icon(Icons.document_scanner_outlined,
-                                size: 48, color: Colors.grey),
-                            const SizedBox(height: 12),
-                            Text(
-                              'No scans yet',
-                              style: TextStyle(
-                                color: Colors.grey,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Start scanning to see history',
-                              style: TextStyle(
-                                color: Colors.grey.shade400,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    )
+                    const Center(child: Padding(padding: EdgeInsets.symmetric(vertical: 40), child: Text("No scans today.", style: TextStyle(color: AppColors.textSecondary))))
                   else
                     ...scans.take(5).map((doc) => _RecentScanItem(
-                          name: doc['result'] ?? 'Unknown',
+                          name: doc['productName'] ?? 'Unknown',
                           time: _formatTime(doc['createdAt']),
-                          tag: doc['result'] == 'safe' ? 'Safe' : 'Caution',
-                          icon: doc['result'] == 'safe'
-                              ? Icons.check_circle_rounded
-                              : Icons.warning_rounded,
+                          tag: doc['result'].toString().toUpperCase(),
                           isSafe: doc['result'] == 'safe',
                         )),
+                  const SizedBox(height: 100), 
                 ],
               ),
             );
@@ -195,16 +106,34 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(color: AppColors.primaryGreen.withOpacity(0.15), borderRadius: BorderRadius.circular(100)),
+      child: const Text('DAILY REPORT', style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1.0)),
+    );
+  }
+
+  Widget _buildVitalityText(int score) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        RichText(
+          text: const TextSpan(
+            style: TextStyle(fontSize: 34, height: 1.1, fontWeight: FontWeight.w900, color: AppColors.textPrimary),
+            children: [TextSpan(text: 'Nourishing\n'), TextSpan(text: 'your vitality.', style: TextStyle(color: AppColors.primaryGreen))],
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text('Safety score: $score%. Your health journey is on track!', style: const TextStyle(color: AppColors.textSecondary, fontSize: 14, fontWeight: FontWeight.w500)),
+      ],
+    );
+  }
+
   String _formatTime(dynamic timestamp) {
-    if (timestamp == null) return 'Recently';
-    if (timestamp is Timestamp) {
-      final diff = DateTime.now().difference(timestamp.toDate());
-      if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-      if (diff.inHours < 24) return '${diff.inHours}h ago';
-      if (diff.inDays < 7) return '${diff.inDays}d ago';
-      return '${(diff.inDays / 7).floor()}w ago';
-    }
-    return 'Recently';
+    if (timestamp == null) return 'Just now';
+    DateTime date = (timestamp as Timestamp).toDate();
+    return "${date.hour}:${date.minute.toString().padLeft(2, '0')}";
   }
 }
 
@@ -212,74 +141,24 @@ class _SafetyScoreCard extends StatelessWidget {
   final int score;
   final int totalScans;
   final int safeScans;
-
-  const _SafetyScoreCard({
-    required this.score,
-    required this.totalScans,
-    required this.safeScans,
-  });
+  const _SafetyScoreCard({required this.score, required this.totalScans, required this.safeScans});
 
   @override
   Widget build(BuildContext context) {
-    final status = score >= 80 ? 'Excellent' : score >= 60 ? 'Good' : 'Needs Work';
-
+    final status = score >= 80 ? 'Excellent' : score >= 50 ? 'Good' : 'Needs Work';
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.accent.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(24),
-      ),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)]),
       child: Row(
         children: [
-          Container(
-            width: 50,
-            height: 50,
-            decoration: const BoxDecoration(
-              color: AppColors.forestGreen,
-              shape: BoxShape.circle,
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              '$score',
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w900,
-                fontSize: 18,
-              ),
-            ),
-          ),
+          CircleAvatar(radius: 25, backgroundColor: AppColors.primaryGreen, child: Text('$score', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 18))),
           const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'SAFETY SCORE',
-                style: TextStyle(
-                  color: Colors.black26,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 0.5,
-                ),
-              ),
-              Text(
-                status,
-                style: const TextStyle(
-                  color: Color(0xFF1A1A1A),
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-            ],
-          ),
+          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('SAFETY SCORE', style: TextStyle(color: AppColors.textSecondary, fontSize: 10, fontWeight: FontWeight.w900)),
+            Text(status, style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w900)),
+          ]),
           const Spacer(),
-          Text(
-            '$safeScans/$totalScans',
-            style: const TextStyle(
-              color: Colors.black38,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+          Text('$safeScans/$totalScans', style: const TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
         ],
       ),
     );
@@ -288,88 +167,20 @@ class _SafetyScoreCard extends StatelessWidget {
 
 class _IngredientsAnalyzedCard extends StatelessWidget {
   final int totalScans;
-
   const _IngredientsAnalyzedCard({required this.totalScans});
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(Icons.eco_rounded, color: AppColors.forestGreen, size: 28),
-
-          const SizedBox(height: 16),
-          const Text(
-            'Ingredients Analyzed',
-            style: TextStyle(
-              color: Color(0xFF1A1A1A),
-              fontSize: 20,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            totalScans > 0
-                ? "You've scanned $totalScans items. Keep it up!"
-                : 'Start scanning to track your food safety.',
-            style: TextStyle(
-              color: Color(0xFF666666),
-              fontSize: 13,
-              height: 1.4,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MiniTag extends StatelessWidget {
-  final String label;
-  final String status;
-
-  const _MiniTag({required this.label, required this.status});
-
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.scaffoldBackgroundLight,
-        borderRadius: BorderRadius.circular(16),
-      ),
-
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      width: double.infinity, padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)]),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-
-            ),
-          ),
-          Text(
-            status,
-            style: TextStyle(
-              fontWeight: FontWeight.w800,
-              color: AppColors.primaryGreen,
-              fontSize: 12,
-            ),
-          ),
+          const Icon(Icons.eco_rounded, color: AppColors.primaryGreen),
+          const SizedBox(height: 16),
+          const Text('Ingredients Analyzed', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: AppColors.textPrimary)),
+          const SizedBox(height: 8),
+          Text(totalScans > 0 ? "You've scanned $totalScans items this week." : 'Start scanning to track your food safety.', style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
         ],
       ),
     );
@@ -382,46 +193,20 @@ class _StatCard extends StatelessWidget {
   final IconData icon;
   final Color color;
   final Color textColor;
-
-  const _StatCard({
-    required this.value,
-    required this.label,
-    required this.icon,
-    required this.color,
-    required this.textColor,
-  });
+  const _StatCard({required this.value, required this.label, required this.icon, required this.color, required this.textColor});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(24),
-      ),
+      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)]),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: textColor.withValues(alpha: 0.6), size: 20),
+          Icon(icon, color: textColor, size: 24),
           const SizedBox(height: 20),
-          Text(
-            value,
-            style: TextStyle(
-              color: textColor,
-              fontSize: 24,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: textColor.withValues(alpha: 0.7),
-              fontSize: 8,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 0.5,
-            ),
-          ),
+          Text(value, style: TextStyle(color: AppColors.textPrimary, fontSize: 24, fontWeight: FontWeight.w900)),
+          Text(label, style: TextStyle(color: AppColors.textSecondary, fontSize: 10, fontWeight: FontWeight.w900)),
         ],
       ),
     );
@@ -432,68 +217,20 @@ class _RecentScanItem extends StatelessWidget {
   final String name;
   final String time;
   final String tag;
-  final IconData icon;
   final bool isSafe;
-
-  const _RecentScanItem({
-    required this.name,
-    required this.time,
-    required this.tag,
-    required this.icon,
-    required this.isSafe,
-  });
+  const _RecentScanItem({required this.name, required this.time, required this.tag, required this.isSafe});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-      ),
+      margin: const EdgeInsets.only(bottom: 12), padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)]),
       child: Row(
         children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            alignment: Alignment.center,
-            child: Icon(icon, color: Colors.blueGrey, size: 24),
-          ),
+          Icon(isSafe ? Icons.check_circle : Icons.warning, color: isSafe ? AppColors.primaryGreen : Colors.redAccent),
           const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w900,
-                    fontSize: 15,
-                    color: Color(0xFF1A1A1A),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '$time • $tag',
-                  style: const TextStyle(
-                    color: Colors.black26,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Icon(
-            isSafe ? Icons.check_circle_rounded : Icons.warning_rounded,
-            color: isSafe ? AppColors.primaryGreen : Colors.redAccent,
-            size: 20,
-          ),
+          Expanded(child: Text(name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.textPrimary), maxLines: 1, overflow: TextOverflow.ellipsis)),
+          Text('$time • $tag', style: const TextStyle(color: AppColors.textSecondary, fontSize: 11)),
         ],
       ),
     );
