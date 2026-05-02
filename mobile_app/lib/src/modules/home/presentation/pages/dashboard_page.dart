@@ -73,29 +73,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   ),
                   const SizedBox(height: 32),
                   
-                  // ĐÃ SỬA NÚT VIEW ARCHIVE Ở ĐÂY
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Recent Scans', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.textPrimary)),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => const ArchivePage()));
-                        }, 
-                        child: const Text('View Archive', style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.w700, fontSize: 12))
-                      ),
-                    ],
-                  ),
-                  
-                  if (scans.isEmpty)
-                    const Center(child: Padding(padding: EdgeInsets.symmetric(vertical: 40), child: Text("No scans today.", style: TextStyle(color: AppColors.textSecondary))))
-                  else
-                    ...scans.take(5).map((doc) => _RecentScanItem(
-                          name: doc['productName'] ?? 'Unknown',
-                          time: _formatTime(doc['createdAt']),
-                          tag: doc['result'].toString().toUpperCase(),
-                          isSafe: doc['result'] == 'safe',
-                        )),
+                  // Recent Scans moved to Insights Page
                   const SizedBox(height: 100), 
                 ],
               ),
