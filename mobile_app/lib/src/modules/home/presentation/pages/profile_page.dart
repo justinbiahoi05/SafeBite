@@ -24,25 +24,45 @@ class _ProfilePageState extends State<ProfilePage> {
   bool _isUploading = false;
   String _healthSearchQuery = '';
 
-  // Grouped health conditions
   final Map<String, List<String>> _healthGroups = {
     'Medical Conditions': [
-      'Diabetes', 'Kidney Disease', 'Hypertension', 'Gout', 'Gastritis',
-      'Asthma', 'Heart Disease', 'IBS', 'Celiac Disease',
+      'Diabetes',
+      'Kidney Disease',
+      'Hypertension',
+      'Gout',
+      'Gastritis',
+      'Asthma',
+      'Heart Disease',
+      'IBS',
+      'Celiac Disease',
     ],
-    'Allergies': [
-      'Nut Allergy', 'Lactose Intolerance',
-    ],
+    'Allergies': ['Nut Allergy', 'Lactose Intolerance'],
     'Diet & Lifestyle': [
-      'Vegan', 'Keto Diet', 'Pregnancy', 'Children', 'Skin Health',
+      'Vegan',
+      'Keto Diet',
+      'Pregnancy',
+      'Children',
+      'Skin Health',
     ],
   };
 
   final Map<String, bool> _healthMap = {
-    'Diabetes': false, 'Kidney Disease': false, 'Pregnancy': false, 'Nut Allergy': false,
-    'Hypertension': false, 'Vegan': false, 'Gout': false, 'Gastritis': false, 'Asthma': false,
-    'Lactose Intolerance': false, 'Keto Diet': false, 'IBS': false, 'Celiac Disease': false,
-    'Heart Disease': false, 'Skin Health': false, 'Children': false,
+    'Diabetes': false,
+    'Kidney Disease': false,
+    'Pregnancy': false,
+    'Nut Allergy': false,
+    'Hypertension': false,
+    'Vegan': false,
+    'Gout': false,
+    'Gastritis': false,
+    'Asthma': false,
+    'Lactose Intolerance': false,
+    'Keto Diet': false,
+    'IBS': false,
+    'Celiac Disease': false,
+    'Heart Disease': false,
+    'Skin Health': false,
+    'Children': false,
   };
 
   @override
@@ -78,7 +98,7 @@ class _ProfilePageState extends State<ProfilePage> {
       source: ImageSource.gallery,
       imageQuality: 25,
       maxWidth: 200,
-      maxHeight: 200
+      maxHeight: 200,
     );
     if (image == null) return;
 
@@ -92,13 +112,19 @@ class _ProfilePageState extends State<ProfilePage> {
       if (mounted) {
         setState(() => _photoData = base64Image);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Avatar updated!"), backgroundColor: AppColors.primaryGreen)
+          const SnackBar(
+            content: Text("Avatar updated!"),
+            backgroundColor: AppColors.primaryGreen,
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Upload failed: $e"), backgroundColor: Colors.red)
+          SnackBar(
+            content: Text("Upload failed: $e"),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } finally {
@@ -108,27 +134,38 @@ class _ProfilePageState extends State<ProfilePage> {
 
   void _editName() async {
     final controller = TextEditingController(text: _displayName);
-    await showDialog(context: context, builder: (c) => AlertDialog(
-      backgroundColor: Colors.white,
-      title: const Text("Edit Name", style: TextStyle(color: AppColors.textPrimary)),
-      content: TextField(controller: controller, style: const TextStyle(color: AppColors.textPrimary)),
-      actions: [
-        ElevatedButton(
-          onPressed: () async {
-            await _service.updateDisplayName(controller.text);
-            setState(() => _displayName = controller.text);
-            Navigator.pop(context);
-          },
-          style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryGreen),
-          child: const Text("Save", style: TextStyle(color: Colors.white))
-        )
-      ],
-    ));
+    await showDialog(
+      context: context,
+      builder: (c) => AlertDialog(
+        backgroundColor: Colors.white,
+        title: const Text(
+          "Edit Name",
+          style: TextStyle(color: AppColors.textPrimary),
+        ),
+        content: TextField(
+          controller: controller,
+          style: const TextStyle(color: AppColors.textPrimary),
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () async {
+              await _service.updateDisplayName(controller.text);
+              setState(() => _displayName = controller.text);
+              Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryGreen,
+            ),
+            child: const Text("Save", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _saveHealth() async {
     await _service.updateHealthConditions(
-      _healthMap.entries.where((e) => e.value).map((e) => e.key).toList()
+      _healthMap.entries.where((e) => e.value).map((e) => e.key).toList(),
     );
   }
 
@@ -138,7 +175,10 @@ class _ProfilePageState extends State<ProfilePage> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: Colors.white,
-        title: const Text("Gemini API Key", style: TextStyle(color: AppColors.textPrimary)),
+        title: const Text(
+          "Gemini API Key",
+          style: TextStyle(color: AppColors.textPrimary),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -164,7 +204,9 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, controller.text),
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryGreen),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryGreen,
+            ),
             child: const Text('Save', style: TextStyle(color: Colors.white)),
           ),
         ],
@@ -175,7 +217,10 @@ class _ProfilePageState extends State<ProfilePage> {
       GeminiService.setApiKey(result);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('API key saved!'), backgroundColor: AppColors.primaryGreen),
+          const SnackBar(
+            content: Text('API key saved!'),
+            backgroundColor: AppColors.primaryGreen,
+          ),
         );
       }
     }
@@ -241,7 +286,9 @@ class _ProfilePageState extends State<ProfilePage> {
                     icon: Icons.key,
                     iconColor: Colors.purple,
                     title: "Gemini API Key",
-                    subtitle: GeminiService.apiKey?.isNotEmpty == true ? "API key configured" : "Not set",
+                    subtitle: GeminiService.apiKey?.isNotEmpty == true
+                        ? "API key configured"
+                        : "Not set",
                     onTap: _setApiKey,
                   ),
                   _buildSettingTile(
@@ -317,10 +364,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ],
                 ),
               ),
-              const Icon(
-                Icons.chevron_right,
-                color: AppColors.textSecondary,
-              ),
+              const Icon(Icons.chevron_right, color: AppColors.textSecondary),
             ],
           ),
         ),
@@ -331,7 +375,9 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator(color: AppColors.primaryGreen));
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.primaryGreen),
+      );
     }
 
     return Scaffold(
@@ -409,15 +455,21 @@ class _ProfilePageState extends State<ProfilePage> {
                             backgroundColor: Colors.white,
                             backgroundImage: _getAvatarImage(),
                             child: _photoData == null
-                              ? const Icon(Icons.person, size: 40, color: AppColors.textSecondary)
-                              : null,
+                                ? const Icon(
+                                    Icons.person,
+                                    size: 40,
+                                    color: AppColors.textSecondary,
+                                  )
+                                : null,
                           ),
                         ),
                         if (_isUploading)
                           const Positioned.fill(
                             child: CircleAvatar(
                               backgroundColor: Colors.black54,
-                              child: CircularProgressIndicator(color: Colors.white),
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         Positioned(
@@ -454,7 +506,11 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.edit, color: AppColors.textSecondary, size: 20),
+                        icon: const Icon(
+                          Icons.edit,
+                          color: AppColors.textSecondary,
+                          size: 20,
+                        ),
                         onPressed: _editName,
                       ),
                     ],
@@ -463,7 +519,10 @@ class _ProfilePageState extends State<ProfilePage> {
                   // Stats row
                   Container(
                     margin: const EdgeInsets.only(top: 16),
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 24,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.primaryGreen.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(100),
@@ -471,7 +530,11 @@ class _ProfilePageState extends State<ProfilePage> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.eco, color: AppColors.primaryGreen, size: 18),
+                        const Icon(
+                          Icons.eco,
+                          color: AppColors.primaryGreen,
+                          size: 18,
+                        ),
                         const SizedBox(width: 8),
                         Text(
                           "SafeBite User",
@@ -518,7 +581,11 @@ class _ProfilePageState extends State<ProfilePage> {
                               ),
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            child: const Icon(Icons.favorite, color: Colors.white, size: 20),
+                            child: const Icon(
+                              Icons.favorite,
+                              color: Colors.white,
+                              size: 20,
+                            ),
                           ),
                           const SizedBox(width: 12),
                           const Text(
@@ -536,7 +603,8 @@ class _ProfilePageState extends State<ProfilePage> {
                         TextButton(
                           onPressed: () {
                             setState(() {
-                              for (var k in _healthMap.keys) _healthMap[k] = false;
+                              for (var k in _healthMap.keys)
+                                _healthMap[k] = false;
                             });
                             _saveHealth();
                           },
@@ -571,24 +639,39 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.search, color: AppColors.textSecondary, size: 20),
+                        const Icon(
+                          Icons.search,
+                          color: AppColors.textSecondary,
+                          size: 20,
+                        ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: TextField(
-                            onChanged: (v) => setState(() => _healthSearchQuery = v),
+                            onChanged: (v) =>
+                                setState(() => _healthSearchQuery = v),
                             decoration: const InputDecoration(
                               hintText: "Search conditions...",
-                              hintStyle: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                              hintStyle: TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: 14,
+                              ),
                               border: InputBorder.none,
-                              contentPadding: EdgeInsets.symmetric(vertical: 12),
+                              contentPadding: EdgeInsets.symmetric(
+                                vertical: 12,
+                              ),
                             ),
                             style: const TextStyle(fontSize: 14),
                           ),
                         ),
                         if (_healthSearchQuery.isNotEmpty)
                           GestureDetector(
-                            onTap: () => setState(() => _healthSearchQuery = ''),
-                            child: const Icon(Icons.close, color: AppColors.textSecondary, size: 18),
+                            onTap: () =>
+                                setState(() => _healthSearchQuery = ''),
+                            child: const Icon(
+                              Icons.close,
+                              color: AppColors.textSecondary,
+                              size: 18,
+                            ),
                           ),
                       ],
                     ),
@@ -627,7 +710,9 @@ class _ProfilePageState extends State<ProfilePage> {
             _buildActionButton(
               icon: Icons.key,
               color: AppColors.primaryGreen,
-              label: GeminiService.apiKey?.isNotEmpty == true ? "API Key Set" : "Set API Key",
+              label: GeminiService.apiKey?.isNotEmpty == true
+                  ? "API Key Set"
+                  : "Set API Key",
               onTap: _setApiKey,
             ),
             const SizedBox(height: 100),
@@ -651,10 +736,7 @@ class _ProfilePageState extends State<ProfilePage> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-            ),
+            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
           ],
         ),
         child: Row(
@@ -693,7 +775,8 @@ class _PremiumHealthChip extends StatefulWidget {
   State<_PremiumHealthChip> createState() => _PremiumHealthChipState();
 }
 
-class _PremiumHealthChipState extends State<_PremiumHealthChip> with SingleTickerProviderStateMixin {
+class _PremiumHealthChipState extends State<_PremiumHealthChip>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
 
@@ -704,9 +787,10 @@ class _PremiumHealthChipState extends State<_PremiumHealthChip> with SingleTicke
       duration: const Duration(milliseconds: 100),
       vsync: this,
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.95,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -720,6 +804,7 @@ class _PremiumHealthChipState extends State<_PremiumHealthChip> with SingleTicke
     _controller.reverse();
     widget.onTap(!widget.isSelected);
   }
+
   void _onTapCancel() => _controller.reverse();
 
   @override
@@ -738,26 +823,28 @@ class _PremiumHealthChipState extends State<_PremiumHealthChip> with SingleTicke
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
                 gradient: widget.isSelected
-                  ? const LinearGradient(
-                      colors: [AppColors.primaryGreen, Color(0xFF22C55E)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    )
-                  : null,
-                color: widget.isSelected ? null : AppColors.scaffoldBackgroundLight,
+                    ? const LinearGradient(
+                        colors: [AppColors.primaryGreen, Color(0xFF22C55E)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      )
+                    : null,
+                color: widget.isSelected
+                    ? null
+                    : AppColors.scaffoldBackgroundLight,
                 borderRadius: BorderRadius.circular(100),
                 border: widget.isSelected
-                  ? null
-                  : Border.all(color: Colors.grey.shade300, width: 1),
+                    ? null
+                    : Border.all(color: Colors.grey.shade300, width: 1),
                 boxShadow: widget.isSelected
-                  ? [
-                      BoxShadow(
-                        color: AppColors.primaryGreen.withOpacity(0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
-                      ),
-                    ]
-                  : null,
+                    ? [
+                        BoxShadow(
+                          color: AppColors.primaryGreen.withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ]
+                    : null,
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -770,8 +857,8 @@ class _PremiumHealthChipState extends State<_PremiumHealthChip> with SingleTicke
                     widget.label,
                     style: TextStyle(
                       color: widget.isSelected
-                        ? Colors.white
-                        : AppColors.textPrimary,
+                          ? Colors.white
+                          : AppColors.textPrimary,
                       fontWeight: FontWeight.w600,
                       fontSize: 13,
                     ),
@@ -828,10 +915,15 @@ class _HealthConditionsGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final filteredGroups = healthGroups.entries.where((g) =>
-      searchQuery.isEmpty ||
-      g.value.any((c) => c.toLowerCase().contains(searchQuery.toLowerCase()))
-    ).toList();
+    final filteredGroups = healthGroups.entries
+        .where(
+          (g) =>
+              searchQuery.isEmpty ||
+              g.value.any(
+                (c) => c.toLowerCase().contains(searchQuery.toLowerCase()),
+              ),
+        )
+        .toList();
 
     if (filteredGroups.isEmpty) {
       return const Center(
@@ -839,10 +931,7 @@ class _HealthConditionsGrid extends StatelessWidget {
           padding: EdgeInsets.all(20),
           child: Text(
             "No conditions found",
-            style: TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: 14,
-            ),
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
           ),
         ),
       );
@@ -852,12 +941,14 @@ class _HealthConditionsGrid extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ...filteredGroups.map((group) {
-          final conditions = group.value.where((k) =>
-            healthMap.containsKey(k) && (
-              searchQuery.isEmpty ||
-              k.toLowerCase().contains(searchQuery.toLowerCase())
-            )
-          ).toList();
+          final conditions = group.value
+              .where(
+                (k) =>
+                    healthMap.containsKey(k) &&
+                    (searchQuery.isEmpty ||
+                        k.toLowerCase().contains(searchQuery.toLowerCase())),
+              )
+              .toList();
 
           if (conditions.isEmpty) return const SizedBox.shrink();
 
@@ -931,7 +1022,8 @@ class _EqualSizeHealthChip extends StatefulWidget {
   State<_EqualSizeHealthChip> createState() => _EqualSizeHealthChipState();
 }
 
-class _EqualSizeHealthChipState extends State<_EqualSizeHealthChip> with SingleTickerProviderStateMixin {
+class _EqualSizeHealthChipState extends State<_EqualSizeHealthChip>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
 
@@ -942,9 +1034,10 @@ class _EqualSizeHealthChipState extends State<_EqualSizeHealthChip> with SingleT
       duration: const Duration(milliseconds: 100),
       vsync: this,
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.96).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.96,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -972,22 +1065,22 @@ class _EqualSizeHealthChipState extends State<_EqualSizeHealthChip> with SingleT
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
                 gradient: widget.isSelected
-                  ? const LinearGradient(
-                      colors: [AppColors.primaryGreen, Color(0xFF22C55E)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    )
-                  : null,
+                    ? const LinearGradient(
+                        colors: [AppColors.primaryGreen, Color(0xFF22C55E)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      )
+                    : null,
                 color: widget.isSelected ? null : Colors.white,
                 borderRadius: BorderRadius.circular(14),
                 border: widget.isSelected
-                  ? null
-                  : Border.all(color: Colors.grey.shade200, width: 1),
+                    ? null
+                    : Border.all(color: Colors.grey.shade200, width: 1),
                 boxShadow: [
                   BoxShadow(
                     color: widget.isSelected
-                      ? AppColors.primaryGreen.withOpacity(0.25)
-                      : Colors.black.withOpacity(0.03),
+                        ? AppColors.primaryGreen.withOpacity(0.25)
+                        : Colors.black.withOpacity(0.03),
                     blurRadius: widget.isSelected ? 8 : 4,
                     offset: const Offset(0, 2),
                   ),
@@ -1005,8 +1098,8 @@ class _EqualSizeHealthChipState extends State<_EqualSizeHealthChip> with SingleT
                       widget.label,
                       style: TextStyle(
                         color: widget.isSelected
-                          ? Colors.white
-                          : AppColors.textPrimary,
+                            ? Colors.white
+                            : AppColors.textPrimary,
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                       ),

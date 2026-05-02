@@ -1,64 +1,37 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:google_generative_ai/google_generative_ai.dart';
 
 class GeminiService {
-  static const String _model = 'gemini-2.5-flash';
-  static const String _baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/$_model:generateContent';
-
-  // API key - in production, use environment variable or secure storage
-  // For demo, we'll ask user to provide or use a placeholder
+  static const String _modelName = 'gemini-2.5-flash';
+  static GenerativeModel? _model;
   static String? _apiKey;
 
   static void setApiKey(String key) {
     _apiKey = key;
+    _model = GenerativeModel(model: _modelName, apiKey: key);
   }
 
   static String? get apiKey => _apiKey;
 
-  /// Analyze ingredients and return safety labels using Gemini
-  /// [ingredients] - List of ingredient names from OCR
-  /// [healthConditions] - User's health conditions
   static Future<Map<String, String>?> analyzeIngredients({
     required List<String> ingredients,
     required List<String> healthConditions,
   }) async {
-    if (_apiKey == null || _apiKey!.isEmpty) {
-      print('GeminiService: API key not set');
+    if (_model == null) {
+      print(
+        'GeminiService Error: API key chưa được thiết lập hoặc Model khởi tạo lỗi.',
+      );
       return null;
     }
 
-    // Build optimized prompt with context
     final prompt = _buildPrompt(ingredients, healthConditions);
 
     try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl?key=$_apiKey'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'contents': [
-            {'parts': [{'text': prompt}]}
-          ],
-          'generationConfig': {
-            'temperature': 0.9,
-            'maxOutputTokens': 3000,
-            'topP': 0.95,
-          },
-        }),
-      );
+      final response = await _model!.generateContent([Content.text(prompt)]);
 
-      if (response.statusCode != 200) {
-        print('GeminiService Error: ${response.statusCode} - ${response.body}');
-        return null;
-      }
+      final text = response.text?.trim() ?? '';
+      if (text.isEmpty) return null;
 
-      final data = json.decode(response.body);
-      final text = data['candidates']?[0]?['content']?['parts']?[0]?['text'] ?? '';
-
-      if (text.isEmpty) {
-        return null;
-      }
-
-      // Parse the response to extract ingredient-label pairs
       return _parseResponse(text);
     } catch (e) {
       print('GeminiService Error: $e');
@@ -66,7 +39,10 @@ class GeminiService {
     }
   }
 
-  static String _buildPrompt(List<String> ingredients, List<String> healthConditions) {
+  static String _buildPrompt(
+    List<String> ingredients,
+    List<String> healthConditions,
+  ) {
     final conditionsText = healthConditions.isEmpty
         ? 'None specified'
         : healthConditions.join(', ');
@@ -98,7 +74,6 @@ Only output valid JSON, no other text.
 
   static Map<String, String>? _parseResponse(String response) {
     try {
-      // Try to extract JSON from response
       final jsonStart = response.indexOf('{');
       final jsonEnd = response.lastIndexOf('}') + 1;
 

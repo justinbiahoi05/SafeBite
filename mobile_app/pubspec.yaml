@@ -12,7 +12,7 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.8
 
-  # Machine Learning (Sử dụng bản git để đảm bảo tương thích tflite mới nhất)
+  # Machine Learning 
   tflite_flutter:
     git:
       url: https://github.com/tensorflow/flutter-tflite.git
@@ -40,6 +40,7 @@ dependencies:
   string_similarity: ^2.0.0
   http: ^1.2.0
   connectivity_plus: ^6.0.0
+  google_generative_ai: ^0.4.7
 
 dev_dependencies:
   flutter_test:

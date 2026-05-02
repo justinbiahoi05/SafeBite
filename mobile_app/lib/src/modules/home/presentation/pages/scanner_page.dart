@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:image_picker/image_picker.dart';
 import 'scan_result_page.dart';
-import '../../../../../services/ocr_service.dart';
+import '../../../../../services/groq_service.dart';
 import '../../../../core/theme/app_colors.dart';
 
 class ScannerPage extends StatefulWidget {
@@ -36,7 +36,7 @@ class _ScannerPageState extends State<ScannerPage> {
 
   Future<void> _setCamera(int index) async {
     if (_cameras == null || _cameras!.isEmpty) return;
-    
+
     _controller = CameraController(
       _cameras![index],
       ResolutionPreset.high,
@@ -55,7 +55,6 @@ class _ScannerPageState extends State<ScannerPage> {
   }
 
   Future<void> _pickFromGallery() async {
-    // Tự động tắt Flash trước khi mở thư viện ảnh
     if (_isFlashOn) {
       _isFlashOn = false;
       await _controller?.setFlashMode(FlashMode.off);
@@ -72,12 +71,11 @@ class _ScannerPageState extends State<ScannerPage> {
 
     try {
       final XFile? image = await _controller?.takePicture();
-      
-      // Tự động tắt Flash ngay sau khi chụp ảnh xong
+
       if (_isFlashOn) {
         _isFlashOn = false;
         await _controller?.setFlashMode(FlashMode.off);
-        setState(() {}); // Cập nhật lại UI nút tia sét
+        setState(() {});
       }
 
       if (image != null) await _processImage(File(image.path));
@@ -90,14 +88,24 @@ class _ScannerPageState extends State<ScannerPage> {
   Future<void> _processImage(File imageFile) async {
     setState(() => _isProcessing = true);
     try {
-      String text = await OCRService.recognizeTextFromImage(imageFile);
-      if (text.length > 5) {
+      final resultJson = await GroqService.extractIngredients(
+        XFile(imageFile.path),
+      );
+
+      if (resultJson != null && resultJson.isNotEmpty) {
         if (!mounted) return;
-        Navigator.push(context, MaterialPageRoute(
-          builder: (_) => ScanResultPage(rawText: text) 
-        )).then((_) => setState(() => _isProcessing = false));
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) =>
+                ScanResultPage(rawText: "", initialGroqData: resultJson),
+          ),
+        ).then((_) => setState(() => _isProcessing = false));
       } else {
-        _showError("Text too blurry or not found. Please try again.");
+        _showError(
+          "AI could not read the label. Please try again with a clearer photo.",
+        );
         setState(() => _isProcessing = false);
       }
     } catch (e) {
@@ -108,9 +116,9 @@ class _ScannerPageState extends State<ScannerPage> {
 
   void _showError(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg), backgroundColor: Colors.red.shade800,
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), backgroundColor: Colors.red.shade800),
+    );
   }
 
   @override
@@ -138,63 +146,106 @@ class _ScannerPageState extends State<ScannerPage> {
           ),
 
           Positioned(
-            bottom: 120, left: 0, right: 0,
+            bottom: 120,
+            left: 0,
+            right: 0,
             child: Column(
               children: [
-                // Thanh điều khiển nhỏ (Flash & Đổi Camera)
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     IconButton(
-                      icon: Icon(_isFlashOn ? Icons.flash_on : Icons.flash_off, color: _isFlashOn ? Colors.yellow : Colors.white, size: 28),
+                      icon: Icon(
+                        _isFlashOn ? Icons.flash_on : Icons.flash_off,
+                        color: _isFlashOn ? Colors.yellow : Colors.white,
+                        size: 28,
+                      ),
                       onPressed: () {
                         _isFlashOn = !_isFlashOn;
-                        _controller?.setFlashMode(_isFlashOn ? FlashMode.torch : FlashMode.off);
+                        _controller?.setFlashMode(
+                          _isFlashOn ? FlashMode.torch : FlashMode.off,
+                        );
                         setState(() {});
-                      }
+                      },
                     ),
                     const SizedBox(width: 30),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(20)),
-                      child: const Text("Scan ingredients list", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black54,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text(
+                        "Scan ingredients list",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
                     ),
                     const SizedBox(width: 30),
                     IconButton(
-                      icon: const Icon(Icons.flip_camera_ios, color: Colors.white, size: 28),
-                      onPressed: _switchCamera
+                      icon: const Icon(
+                        Icons.flip_camera_ios,
+                        color: Colors.white,
+                        size: 28,
+                      ),
+                      onPressed: _switchCamera,
                     ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 24),
-                
-                // Nút chụp và Gallery
+
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    IconButton(icon: const Icon(Icons.photo_library, color: Colors.white, size: 35), onPressed: _pickFromGallery),
+                    IconButton(
+                      icon: const Icon(
+                        Icons.photo_library,
+                        color: Colors.white,
+                        size: 35,
+                      ),
+                      onPressed: _pickFromGallery,
+                    ),
                     const SizedBox(width: 40),
                     GestureDetector(
                       onTap: _captureAndScan,
                       child: Container(
-                        height: 80, width: 80,
-                        decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 4)),
+                        height: 80,
+                        width: 80,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 4),
+                        ),
                         child: Padding(
                           padding: const EdgeInsets.all(4.0),
                           child: Container(
-                            decoration: BoxDecoration(shape: BoxShape.circle, color: _isProcessing ? Colors.grey : AppColors.primaryGreen),
-                            child: _isProcessing ? const CircularProgressIndicator(color: Colors.white) : null,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: _isProcessing
+                                  ? Colors.grey
+                                  : AppColors.primaryGreen,
+                            ),
+                            child: _isProcessing
+                                ? const CircularProgressIndicator(
+                                    color: Colors.white,
+                                  )
+                                : null,
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 80), // Cân bằng UI với nút Gallery
+                    const SizedBox(width: 80),
                   ],
                 ),
               ],
             ),
-          )
+          ),
         ],
       ),
     );
@@ -204,26 +255,27 @@ class _ScannerPageState extends State<ScannerPage> {
 class _ScannerOverlayShape extends ShapeBorder {
   final Color borderColor;
   final Color overlayColor;
-  const _ScannerOverlayShape({required this.borderColor, required this.overlayColor});
+  const _ScannerOverlayShape({
+    required this.borderColor,
+    required this.overlayColor,
+  });
 
   @override
   EdgeInsetsGeometry get dimensions => EdgeInsets.zero;
   @override
   Path getInnerPath(Rect rect, {TextDirection? textDirection}) => Path();
   @override
-  Path getOuterPath(Rect rect, {TextDirection? textDirection}) => Path()..addRect(rect);
+  Path getOuterPath(Rect rect, {TextDirection? textDirection}) =>
+      Path()..addRect(rect);
   @override
   void paint(Canvas canvas, Rect rect, {TextDirection? textDirection}) {
     final width = rect.width;
     final height = rect.height;
-    
-    // ĐÃ CHỈNH SỬA Ở ĐÂY: 
-    // - Dời khung xuống dưới một chút (trừ đi 20 thay vì trừ 80)
-    // - Tăng chiều cao khung lên thành 60% màn hình (height * 0.6)
+
     final holeRect = Rect.fromCenter(
-      center: Offset(width / 2, height / 2 - 20), 
-      width: width * 0.9, 
-      height: height * 0.5
+      center: Offset(width / 2, height / 2 - 20),
+      width: width * 0.9,
+      height: height * 0.5,
     );
 
     final path = Path()
@@ -232,8 +284,15 @@ class _ScannerOverlayShape extends ShapeBorder {
       ..fillType = PathFillType.evenOdd;
     canvas.drawPath(path, Paint()..color = overlayColor);
 
-    canvas.drawRRect(RRect.fromRectAndRadius(holeRect, const Radius.circular(20)), Paint()..color = borderColor..style = PaintingStyle.stroke..strokeWidth = 3);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(holeRect, const Radius.circular(20)),
+      Paint()
+        ..color = borderColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3,
+    );
   }
+
   @override
   ShapeBorder scale(double t) => this;
 }
