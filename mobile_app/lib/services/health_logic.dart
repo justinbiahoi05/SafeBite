@@ -7,12 +7,23 @@ class HealthLogic {
     'sugar': ['Diabetes', 'Keto Diet', 'Skin Health', 'Children'],
     'sweetener': ['Diabetes', 'Pregnancy', 'IBS', 'Keto Diet'],
     'sodium': ['Kidney Disease', 'Hypertension', 'Gout', 'Heart Disease'],
-    'allergen': ['Nut Allergy', 'Lactose Intolerance', 'Celiac Disease', 'Asthma'],
+    'allergen': ['Nut Allergy', 'Lactose Intolerance', 'Celiac Disease', 'Asthma', 'Peanut Allergy', 'Shellfish Allergy'],
     'bad_fat': ['Hypertension', 'Heart Disease', 'Vegan', 'Pregnancy', 'Skin Health'],
     'acidic': ['Gastritis', 'Kidney Disease', 'Pregnancy'],
     'additive': ['Pregnancy', 'Children', 'Asthma', 'Skin Health'],
     'spicy': ['Gastritis', 'Pregnancy'],
     'safe': [],
+  };
+
+  // Alias map: Chuẩn hóa tên bệnh từ profile về tên chuẩn trong map
+  static const Map<String, String> _conditionAlias = {
+    'peanut allergy': 'Nut Allergy',
+    'shellfish allergy': 'Shellfish Allergy',
+    'lactose intolerance': 'Lactose Intolerance',
+    'celiac disease': 'Celiac Disease',
+    'heart disease': 'Heart Disease',
+    'kidney disease': 'Kidney Disease',
+    'skin health': 'Skin Health',
   };
 
   // 2. DATASET V3 CHUẨN XÁC 100% (Khắc phục AI đoán sai)
@@ -67,13 +78,23 @@ class HealthLogic {
 
   // HÀM KIỂM TRA MỨC ĐỘ NGUY HIỂM VỚI NGƯỜI DÙNG
   static bool isRiskForUser({
-    required String label, 
-    required String ingredientName, 
+    required String label,
+    required String ingredientName,
     required List<String> userConditions
   }) {
-    // Nếu nhãn AI xung đột với Bệnh của User -> Báo Đỏ
+    // Chuẩn hóa danh sách điều kiện người dùng: lowercase -> map alias -> lowercase chuẩn
+    final normalizedConditions = userConditions.map((c) {
+      final lower = c.toLowerCase().trim();
+      return _conditionAlias[lower] ?? c.trim();
+    }).toList();
+
+    final lowerNormalized = normalizedConditions.map((c) => c.toLowerCase().trim()).toList();
+
+    // Nếu nhãn AI xung đột với Bệnh của User -> Báo Đỏ (so sánh không phân biệt hoa/thường)
     if (labelToConditionMap.containsKey(label)) {
-      bool aiRisk = labelToConditionMap[label]!.any((c) => userConditions.contains(c));
+      bool aiRisk = labelToConditionMap[label]!.any((c) =>
+        lowerNormalized.contains(c.toLowerCase().trim())
+      );
       if (aiRisk) return true;
     }
 
@@ -82,7 +103,7 @@ class HealthLogic {
       String name = ingredientName.toLowerCase().trim();
       if (_ingredientsDb!.containsKey(name)) {
         List<dynamic> restrictedFor = _ingredientsDb![name];
-        return restrictedFor.any((c) => userConditions.contains(c));
+        return restrictedFor.any((c) => lowerNormalized.contains(c.toString().toLowerCase().trim()));
       }
     }
 

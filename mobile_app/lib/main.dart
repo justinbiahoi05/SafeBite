@@ -46,6 +46,12 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'SafeBite',
       debugShowCheckedModeBanner: false,
+      // Use onGenerateRoute for proper route handling
+      onGenerateRoute: (settings) {
+        return MaterialPageRoute(
+          builder: (context) => const AuthWrapper(),
+        );
+      },
       theme: ThemeData(
         useMaterial3: true,
         brightness: Brightness.dark,

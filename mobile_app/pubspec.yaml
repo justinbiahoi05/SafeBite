@@ -39,6 +39,7 @@ dependencies:
   fl_chart: ^0.69.0
   string_similarity: ^2.0.0
   http: ^1.2.0
+  connectivity_plus: ^6.0.0
 
 dev_dependencies:
   flutter_test:

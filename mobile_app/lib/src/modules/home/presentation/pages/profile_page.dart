@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../../services/user_profile_service.dart';
 import '../../../../../services/auth_service.dart';
+import '../../../../../services/gemini_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../modules/auth/presentation/login_screen.dart';
 
@@ -22,9 +23,10 @@ class _ProfilePageState extends State<ProfilePage> {
   bool _isUploading = false;
 
   final Map<String, bool> _healthMap = {
-    'Diabetes': false, 'Kidney Disease': false, 'Pregnancy': false, 'Peanut Allergy': false,
+    'Diabetes': false, 'Kidney Disease': false, 'Pregnancy': false, 'Nut Allergy': false,
     'Hypertension': false, 'Vegan': false, 'Gout': false, 'Gastritis': false, 'Asthma': false,
-    'Lactose Intolerance': false,
+    'Lactose Intolerance': false, 'Keto Diet': false, 'IBS': false, 'Celiac Disease': false,
+    'Heart Disease': false, 'Skin Health': false, 'Children': false,
   };
 
   @override
@@ -102,6 +104,56 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _saveHealth() async {
     await _service.updateHealthConditions(_healthMap.entries.where((e) => e.value).map((e) => e.key).toList());
+  }
+
+  Future<void> _setApiKey() async {
+    final controller = TextEditingController(text: GeminiService.apiKey ?? '');
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        title: const Text("Gemini API Key", style: TextStyle(color: AppColors.textPrimary)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Enter your Google Gemini API key for cloud-based analysis.',
+              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller,
+              decoration: const InputDecoration(
+                labelText: 'API Key',
+                border: OutlineInputBorder(),
+                hintText: 'AIza...',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, controller.text),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryGreen),
+            child: const Text('Save', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null) {
+      GeminiService.setApiKey(result);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('API key saved!'), backgroundColor: AppColors.primaryGreen),
+        );
+      }
+    }
+    controller.dispose();
   }
 
   // Hàm hỗ trợ đọc ảnh (Nhận diện xem là link web hay chuỗi Base64)
@@ -188,6 +240,15 @@ class _ProfilePageState extends State<ProfilePage> {
               await AuthService().signOut();
               Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => const LoginScreen()), (r) => false);
             },
+          ),
+
+          const SizedBox(height: 16),
+
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryGreen, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 0),
+            icon: const Icon(Icons.key, color: Colors.white),
+            label: Text(GeminiService.apiKey?.isNotEmpty == true ? "API Key Set" : "Set API Key", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+            onPressed: _setApiKey,
           ),
           const SizedBox(height: 100),
         ],

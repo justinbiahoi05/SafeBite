@@ -5,6 +5,8 @@ import '../../../../../services/health_logic.dart';
 import '../../../../../services/user_profile_service.dart';
 import '../../../../../services/string_helper.dart';
 import '../../../../../services/scan_history_service.dart';
+import '../../../../../services/network_service.dart';
+import '../../../../../services/gemini_service.dart';
 import '../../../../core/theme/app_colors.dart';
 
 class ScanResultPage extends StatefulWidget {
@@ -69,18 +71,51 @@ class _ScanResultPageState extends State<ScanResultPage> {
       print("DEBUG 5: Tách được ${cleanIngredients.length} chất");
 
       List<Map<String, String>> temp = [];
-      for (var item in cleanIngredients) {
-        print("DEBUG 6: AI đang đoán chất: $item");
-        final pred = _ai.predict(item);
-        
-        // Dùng bộ lọc y khoa
-        String finalLabel = pred['label'] ?? 'unknown';
-        temp.add({'name': item, 'label': finalLabel});
+
+      // Check internet connectivity
+      final hasInternet = await NetworkService().hasInternet();
+      print("DEBUG: Internet status: $hasInternet");
+
+      if (hasInternet && GeminiService.apiKey != null && GeminiService.apiKey!.isNotEmpty) {
+        // Use Gemini API when internet is available
+        print("DEBUG: Using Gemini API...");
+        final geminiResults = await GeminiService.analyzeIngredients(
+          ingredients: cleanIngredients,
+          healthConditions: _userConditions,
+        );
+
+        if (geminiResults != null) {
+          // Convert Gemini results to expected format
+          for (var item in cleanIngredients) {
+            final label = geminiResults[item.toLowerCase()] ?? geminiResults[item] ?? 'unknown';
+            temp.add({'name': item, 'label': label});
+          }
+          print("DEBUG: Gemini analysis complete");
+        } else {
+          // Fallback to TFLite if Gemini fails
+          print("DEBUG: Gemini failed, falling back to TFLite...");
+          for (var item in cleanIngredients) {
+            final pred = _ai.predict(item);
+            String finalLabel = pred['label'] ?? 'unknown';
+            temp.add({'name': item, 'label': finalLabel});
+          }
+        }
+      } else {
+        // Fallback to TFLite model (offline mode)
+        print("DEBUG: Using TFLite model (offline)...");
+        for (var item in cleanIngredients) {
+          print("DEBUG 6: AI đang đoán chất: $item");
+          final pred = _ai.predict(item);
+
+          // Dùng bộ lọc y khoa
+          String finalLabel = pred['label'] ?? 'unknown';
+          temp.add({'name': item, 'label': finalLabel});
+        }
       }
 
       _hasDanger = temp.any((item) => HealthLogic.isRiskForUser(
-        label: item['label']!, 
-        ingredientName: item['name']!, 
+        label: item['label']!,
+        ingredientName: item['name']!,
         userConditions: _userConditions
       ));
 
@@ -89,7 +124,7 @@ class _ScanResultPageState extends State<ScanResultPage> {
           _isAnalyzing = false;
           _analyzedResults = temp;
         });
-        
+
         print("DEBUG FINAL: Phân tích XONG. Nguy hiểm: $_hasDanger");
 
         if (_hasDanger) {

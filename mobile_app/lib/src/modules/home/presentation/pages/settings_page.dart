@@ -4,6 +4,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_app/services/auth_service.dart';
 import 'package:mobile_app/services/user_profile_service.dart';
+import 'package:mobile_app/services/gemini_service.dart';
 import 'package:mobile_app/src/core/theme/app_colors.dart';
 import 'package:mobile_app/src/modules/auth/presentation/login_screen.dart';
 
@@ -150,6 +151,60 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           );
         }
+      }
+    }
+
+    controller.dispose();
+  }
+
+  Future<void> _setApiKey() async {
+    final controller = TextEditingController(text: GeminiService.apiKey ?? '');
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Gemini API Key'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Enter your Google Gemini API key for cloud-based ingredient analysis.',
+              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller,
+              decoration: const InputDecoration(
+                labelText: 'API Key',
+                border: OutlineInputBorder(),
+                hintText: 'AIza...',
+              ),
+              autofocus: true,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, controller.text),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null) {
+      GeminiService.setApiKey(result);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('API key saved'),
+            backgroundColor: Colors.green,
+          ),
+        );
       }
     }
 
@@ -325,6 +380,12 @@ class _SettingsPageState extends State<SettingsPage> {
               title: 'Edit Name',
               subtitle: 'Change your display name',
               onTap: _editName,
+            ),
+            _SettingsTile(
+              icon: Icons.key,
+              title: 'Gemini API Key',
+              subtitle: 'Configure for cloud-based analysis',
+              onTap: _setApiKey,
             ),
             _SettingsTile(
               icon: Icons.logout,
