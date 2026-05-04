@@ -5,11 +5,12 @@ class ScanHistoryService {
   final CollectionReference _scans = FirebaseFirestore.instance.collection('scans');
   final User? _user = FirebaseAuth.instance.currentUser;
 
-  // Add a new scan result
+  // Add a new scan result with ingredient predictions
   Future<DocumentReference> addScan({
     required String result,
     required double confidence,
     List<String>? ingredients,
+    Map<String, String>? ingredientPredictions,
     String? imageUrl,
     String? productName,
   }) async {
@@ -20,6 +21,7 @@ class ScanHistoryService {
       'result': result,
       'confidence': confidence,
       'ingredients': ingredients ?? [],
+      'ingredientPredictions': ingredientPredictions ?? {},
       'imageUrl': imageUrl,
       'productName': productName,
       'createdAt': FieldValue.serverTimestamp(),

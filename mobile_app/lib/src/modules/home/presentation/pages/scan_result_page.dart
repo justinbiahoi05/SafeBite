@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../../services/ai_service.dart';
@@ -6,16 +7,19 @@ import '../../../../../services/user_profile_service.dart';
 import '../../../../../services/scan_history_service.dart';
 import '../../../../../services/network_service.dart';
 import '../../../../../services/groq_service.dart';
+import '../../../../../services/storage_service.dart';
 import '../../../../core/theme/app_colors.dart';
 
 class ScanResultPage extends StatefulWidget {
   final String rawText;
   final Map<String, dynamic>? initialGroqData;
+  final File? capturedImageFile;
 
   const ScanResultPage({
     super.key,
     required this.rawText,
     this.initialGroqData,
+    this.capturedImageFile,
   });
 
   @override
@@ -79,6 +83,8 @@ class _ScanResultPageState extends State<ScanResultPage> {
           .where((e) => e.length > 2)
           .toList();
 
+      print("DEBUG: ingredients to analyze: $cleanIngredients");
+
       List<Map<String, String>> temp = [];
 
       final hasInternet = await NetworkService().hasInternet();
@@ -89,10 +95,19 @@ class _ScanResultPageState extends State<ScanResultPage> {
           healthConditions: _userConditions,
         );
 
-        if (labeledResults != null) {
+        print("DEBUG: Groq result: $labeledResults");
+
+        if (labeledResults != null && labeledResults.isNotEmpty) {
           labeledResults.forEach((name, label) {
             temp.add({"name": name, "label": label});
           });
+        } else {
+          print("DEBUG: Groq failed, using local AI fallback");
+          // Fallback: use local AI if Groq fails
+          for (var item in cleanIngredients) {
+            final pred = _ai.predict(item);
+            temp.add({'name': item, 'label': pred['label'] ?? 'unknown'});
+          }
         }
 
         final mockData = {"ingredients": cleanIngredients.join(", ")};
@@ -188,10 +203,24 @@ class _ScanResultPageState extends State<ScanResultPage> {
   }
 
   Future<void> _saveToCloud() async {
+    // Upload image first if available
+    String? imageUrl;
+    if (widget.capturedImageFile != null) {
+      imageUrl = await StorageService.uploadScanImage(widget.capturedImageFile!);
+    }
+
+    // Convert ingredient predictions map for storage
+    final ingredientPredictions = <String, String>{};
+    for (var item in _analyzedResults) {
+      ingredientPredictions[item['name']!] = item['label']!;
+    }
+
     await ScanHistoryService().addScan(
       result: _hasDanger ? 'caution' : 'safe',
       confidence: 0.99,
       ingredients: _analyzedResults.map((e) => e['name']!).toList(),
+      ingredientPredictions: ingredientPredictions,
+      imageUrl: imageUrl,
       productName: _nameController.text,
     );
     if (mounted) {
@@ -392,10 +421,22 @@ class _ScanResultPageState extends State<ScanResultPage> {
               ],
             ),
           ),
+        const Text(
+          "INGREDIENT ANALYSIS",
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            fontSize: 12,
+            letterSpacing: 1.0,
+            color: AppColors.primaryGreen,
+          ),
+        ),
+        const SizedBox(height: 12),
         ..._analyzedResults.map((item) {
-          bool isDanger = HealthLogic.isRiskForUser(
-            label: item['label']!,
-            ingredientName: item['name']!,
+          final ingredientName = item['name']!;
+          final label = item['label']!;
+          final isDanger = HealthLogic.isRiskForUser(
+            label: label,
+            ingredientName: ingredientName,
             userConditions: _userConditions,
           );
           return Container(
@@ -439,7 +480,7 @@ class _ScanResultPageState extends State<ScanResultPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        item['name']!.toUpperCase(),
+                        ingredientName.toUpperCase(),
                         style: const TextStyle(
                           color: AppColors.textPrimary,
                           fontWeight: FontWeight.w900,
@@ -448,16 +489,22 @@ class _ScanResultPageState extends State<ScanResultPage> {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Text(
-                        item['label']!.toUpperCase(),
-                        style: TextStyle(
-                          color: isDanger
-                              ? Colors.red
-                              : AppColors.textSecondary,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 1.0,
-                        ),
+                      Row(
+                        children: [
+                          _buildCategoryChip(label),
+                          const SizedBox(width: 8),
+                          Text(
+                            isDanger ? '- CAUTION' : '- SAFE',
+                            style: TextStyle(
+                              color: isDanger
+                                  ? Colors.red
+                                  : AppColors.primaryGreen,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1.0,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -492,5 +539,49 @@ class _ScanResultPageState extends State<ScanResultPage> {
         ),
       ],
     );
+  }
+
+  Widget _buildCategoryChip(String label) {
+    // Map labels to friendly display names and colors
+    final categoryInfo = _getCategoryInfo(label);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: categoryInfo['color'] as Color,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        categoryInfo['name'] as String,
+        style: TextStyle(
+          color: categoryInfo['textColor'] as Color,
+          fontSize: 10,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
+
+  Map<String, dynamic> _getCategoryInfo(String label) {
+    switch (label.toLowerCase()) {
+      case 'sugar':
+        return {'name': 'SUGAR', 'color': Colors.orange.shade100, 'textColor': Colors.orange.shade800};
+      case 'sweetener':
+        return {'name': 'SWEETENER', 'color': Colors.pink.shade100, 'textColor': Colors.pink.shade800};
+      case 'sodium':
+        return {'name': 'SODIUM', 'color': Colors.blue.shade100, 'textColor': Colors.blue.shade800};
+      case 'allergen':
+        return {'name': 'ALLERGEN', 'color': Colors.red.shade100, 'textColor': Colors.red.shade800};
+      case 'bad_fat':
+        return {'name': 'BAD FAT', 'color': Colors.yellow.shade100, 'textColor': Colors.yellow.shade800};
+      case 'acidic':
+        return {'name': 'ACIDIC', 'color': Colors.purple.shade100, 'textColor': Colors.purple.shade800};
+      case 'additive':
+        return {'name': 'ADDITIVE', 'color': Colors.grey.shade200, 'textColor': Colors.grey.shade700};
+      case 'spicy':
+        return {'name': 'SPICY', 'color': Colors.red.shade100, 'textColor': Colors.red.shade800};
+      default:
+        return {'name': 'SAFE', 'color': AppColors.primaryGreen.withOpacity(0.1), 'textColor': AppColors.primaryGreen};
+    }
   }
 }
