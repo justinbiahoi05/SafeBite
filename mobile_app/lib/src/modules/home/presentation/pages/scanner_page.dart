@@ -20,6 +20,7 @@ class _ScannerPageState extends State<ScannerPage> {
   bool _isFlashOn = false;
 
   final ImagePicker _picker = ImagePicker();
+  File? _capturedImageFile;
 
   @override
   void initState() {
@@ -62,7 +63,10 @@ class _ScannerPageState extends State<ScannerPage> {
     }
 
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-    if (image != null) _processImage(File(image.path));
+    if (image != null && !_isProcessing) {
+      setState(() => _isProcessing = true);
+      _processImage(File(image.path));
+    }
   }
 
   Future<void> _captureAndScan() async {
@@ -85,8 +89,16 @@ class _ScannerPageState extends State<ScannerPage> {
     }
   }
 
+  bool _hasNavigated = false;
+
   Future<void> _processImage(File imageFile) async {
-    setState(() => _isProcessing = true);
+    // Guard: prevent multiple calls
+    if (_hasNavigated || !_isProcessing) return;
+    _hasNavigated = true;
+
+    setState(() {
+      _capturedImageFile = imageFile;
+    });
     try {
       final resultJson = await GroqService.extractIngredients(
         XFile(imageFile.path),
@@ -98,18 +110,26 @@ class _ScannerPageState extends State<ScannerPage> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) =>
-                ScanResultPage(rawText: "", initialGroqData: resultJson),
+            builder: (_) => ScanResultPage(
+              rawText: "",
+              initialGroqData: resultJson,
+              capturedImageFile: imageFile,
+            ),
           ),
-        ).then((_) => setState(() => _isProcessing = false));
+        ).then((_) {
+          _hasNavigated = false;
+          setState(() => _isProcessing = false);
+        });
       } else {
         _showError(
           "AI could not read the label. Please try again with a clearer photo.",
         );
+        _hasNavigated = false;
         setState(() => _isProcessing = false);
       }
     } catch (e) {
       _showError("Error: $e");
+      _hasNavigated = false;
       setState(() => _isProcessing = false);
     }
   }
