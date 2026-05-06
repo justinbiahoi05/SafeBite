@@ -34,6 +34,7 @@ class _ScanResultPageState extends State<ScanResultPage> {
   bool _isEditing = true;
   bool _isAnalyzing = false;
   bool _hasDanger = false;
+  bool _isSaving = false;
 
   final TextEditingController _nameController = TextEditingController();
   late TextEditingController _textController;
@@ -203,13 +204,22 @@ class _ScanResultPageState extends State<ScanResultPage> {
   }
 
   Future<void> _saveToCloud() async {
-    // Upload image first if available
+  if (_isSaving) return;
+
+  setState(() {
+    _isSaving = true;
+  });
+
+  // 👇 QUAN TRỌNG: cho Flutter 1 frame để vẽ spinner
+  await Future.delayed(const Duration(milliseconds: 50));
+
+  try {
     String? imageUrl;
     if (widget.capturedImageFile != null) {
-      imageUrl = await StorageService.uploadScanImage(widget.capturedImageFile!);
+      imageUrl =
+          await StorageService.uploadScanImage(widget.capturedImageFile!);
     }
 
-    // Convert ingredient predictions map for storage
     final ingredientPredictions = <String, String>{};
     for (var item in _analyzedResults) {
       ingredientPredictions[item['name']!] = item['label']!;
@@ -223,16 +233,23 @@ class _ScanResultPageState extends State<ScanResultPage> {
       imageUrl: imageUrl,
       productName: _nameController.text,
     );
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Saved to History!"),
+        backgroundColor: AppColors.primaryGreen,
+      ),
+    );
+
+    Navigator.pop(context);
+  } catch (e) {
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Saved to History!"),
-          backgroundColor: AppColors.primaryGreen,
-        ),
-      );
-      Navigator.pop(context);
+      setState(() => _isSaving = false);
     }
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -517,17 +534,8 @@ class _ScanResultPageState extends State<ScanResultPage> {
         SizedBox(
           width: double.infinity,
           height: 60,
-          child: ElevatedButton.icon(
-            onPressed: _saveToCloud,
-            icon: const Icon(Icons.cloud_upload, color: Colors.white),
-            label: const Text(
-              "SAVE TO HISTORY",
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 1.0,
-              ),
-            ),
+          child: ElevatedButton(
+            onPressed: _isSaving ? null : _saveToCloud,
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryGreen,
               shape: RoundedRectangleBorder(
@@ -535,7 +543,31 @@ class _ScanResultPageState extends State<ScanResultPage> {
               ),
               elevation: 0,
             ),
-          ),
+            child: _isSaving
+                ? const SizedBox(
+                    height: 24,
+                    width: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.cloud_upload, color: Colors.white),
+                      SizedBox(width: 10),
+                      Text(
+                        "SAVE TO HISTORY",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                    ],
+                  ),
+          )
         ),
       ],
     );
