@@ -24,20 +24,20 @@ class HomeBottomNavBar extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _NavBarItem(
-            icon: Icons.home_rounded,
-            label: 'HOME',
+            icon: Icons.qr_code_scanner_rounded,
+            label: 'SCAN',
             isActive: currentIndex == 0,
             onTap: () => onTap(0),
           ),
           _NavBarItem(
-            icon: Icons.qr_code_scanner_rounded,
-            label: 'SCAN',
+            icon: Icons.bar_chart_rounded,
+            label: 'INSIGHTS',
             isActive: currentIndex == 1,
             onTap: () => onTap(1),
           ),
           _NavBarItem(
-            icon: Icons.bar_chart_rounded,
-            label: 'INSIGHTS',
+            icon: Icons.smart_toy_rounded,
+            label: 'AI',
             isActive: currentIndex == 2,
             onTap: () => onTap(2),
           ),

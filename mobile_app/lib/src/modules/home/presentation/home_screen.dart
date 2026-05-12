@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../core/theme/app_colors.dart';
 import 'component/home_bottom_navbar.dart';
-import 'pages/dashboard_page.dart';
+import 'pages/ai_chat_page.dart';
 import 'pages/scanner_page.dart';
 import 'pages/insights_page.dart';
 import 'pages/profile_page.dart';
@@ -17,12 +17,12 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _currentIndex = 1; // Mặc định vào thẳng trang Scanner
+  int _currentIndex = 0; // Default to Scanner page
 
   final List<Widget> _pages = const [
-    DashboardPage(),
     ScannerPage(),
     InsightsPage(),
+    AIChatPage(),
     ProfilePage(),
   ];
 
