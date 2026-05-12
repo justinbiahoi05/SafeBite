@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:camera/camera.dart';
-import 'secrets.dart';
 
 class GroqService {
   static const String _apiKey = Secrets.groqApiKey;
@@ -188,3 +187,4 @@ class GroqService {
     }
   }
 }
+
