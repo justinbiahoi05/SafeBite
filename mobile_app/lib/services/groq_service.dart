@@ -153,4 +153,38 @@ class GroqService {
       return null;
     }
   }
+
+  /// CHAT: Send conversation history to get AI response
+  static Future<String?> chat(List<Map<String, String>> messages) async {
+    // Convert messages to Groq format
+    final groqMessages = messages.map((m) => {
+      "role": m["role"] ?? "user",
+      "content": m["content"] ?? "",
+    }).toList();
+
+    final payload = {
+      "model": "llama-3.3-70b-versatile",
+      "messages": groqMessages,
+      "temperature": 0.7,
+    };
+
+    try {
+      final response = await http.post(
+        Uri.parse(_baseUrl),
+        headers: {
+          "Authorization": "Bearer $_apiKey",
+          "Content-Type": "application/json",
+        },
+        body: jsonEncode(payload),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(utf8.decode(response.bodyBytes));
+        return data['choices'][0]['message']['content'];
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
 }
