@@ -85,14 +85,14 @@ class _NavBarItem extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: isActive ? const Color(0xFF2C4C3B) : Colors.black54,
+              color: isActive ? AppColors.navbarActive : AppColors.navbarInactive,
               size: 24,
             ),
             const SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(
-                color: isActive ? const Color(0xFF2C4C3B) : Colors.black54,
+                color: isActive ? AppColors.navbarActive : AppColors.navbarInactive,
                 fontSize: 10,
                 fontWeight: isActive ? FontWeight.w900 : FontWeight.w700,
                 letterSpacing: 0.2,
