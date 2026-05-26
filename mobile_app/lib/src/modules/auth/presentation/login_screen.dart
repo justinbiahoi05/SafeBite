@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:mobile_app/services/auth_service.dart';
+import 'package:mobile_app/src/core/data/remote/services/auth_service.dart';
 import 'package:mobile_app/src/core/theme/app_colors.dart';
 import 'component/auth_text_field.dart';
 import 'component/auth_button.dart';
@@ -68,7 +68,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // Login with Google
+
   Future<void> _loginWithGoogle() async {
     setState(() {
       _isLoading = true;
@@ -122,7 +122,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 30),
 
-                // Login Card
+
                 Container(
                   padding: const EdgeInsets.all(28.0),
                   decoration: BoxDecoration(

@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:image_picker/image_picker.dart';
 import 'scan_result_page.dart';
-import '../../../../../services/groq_service.dart';
+import 'package:mobile_app/src/core/data/remote/services/groq_service.dart';
+import 'package:mobile_app/src/common/utils/getit_utils.dart';
 import '../../../../core/theme/app_colors.dart';
 
 class ScannerPage extends StatefulWidget {
@@ -92,7 +93,7 @@ class _ScannerPageState extends State<ScannerPage> {
   bool _hasNavigated = false;
 
   Future<void> _processImage(File imageFile) async {
-    // Guard: prevent multiple calls
+
     if (_hasNavigated || !_isProcessing) return;
     _hasNavigated = true;
 
@@ -100,7 +101,7 @@ class _ScannerPageState extends State<ScannerPage> {
       _capturedImageFile = imageFile;
     });
     try {
-      final resultJson = await GroqService.extractIngredients(
+      final resultJson = await getIt<GroqService>().extractIngredients(
         XFile(imageFile.path),
       );
 

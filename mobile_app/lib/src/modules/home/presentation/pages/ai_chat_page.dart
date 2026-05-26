@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../../services/groq_service.dart';
-import '../../../../../services/user_profile_service.dart';
+import 'package:mobile_app/src/core/data/remote/services/groq_service.dart';
+import 'package:mobile_app/src/core/data/remote/services/user_profile_service.dart';
+import 'package:mobile_app/src/common/utils/getit_utils.dart';
 
 class AIChatPage extends StatefulWidget {
   const AIChatPage({super.key});
@@ -24,7 +25,7 @@ class _AIChatPageState extends State<AIChatPage> {
   }
 
   Future<void> _loadHealthConditions() async {
-    final conditions = await UserProfileService().getHealthConditions();
+    final conditions = await getIt<UserProfileService>().getHealthConditions();
     setState(() {
       _healthConditions = conditions;
       _initMessages();
@@ -73,7 +74,7 @@ class _AIChatPageState extends State<AIChatPage> {
     });
     _scrollToBottom();
 
-    final response = await GroqService.chat(_messages);
+    final response = await getIt<GroqService>().chat(_messages);
 
     setState(() {
       _isLoading = false;
@@ -93,7 +94,7 @@ class _AIChatPageState extends State<AIChatPage> {
       child: SafeArea(
         child: Column(
           children: [
-            // Header
+
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               child: Row(
@@ -111,14 +112,14 @@ class _AIChatPageState extends State<AIChatPage> {
                 ],
               ),
             ),
-            // Messages
+
             Expanded(
               child: ListView.builder(
                 controller: _scrollController,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: _messages.length - 1, // Exclude system message
+                itemCount: _messages.length - 1,
                 itemBuilder: (context, index) {
-                  // Skip system message
+
                   if (index == 0 && _messages[0]["role"] == "system") {
                     return const SizedBox.shrink();
                   }
@@ -139,7 +140,7 @@ class _AIChatPageState extends State<AIChatPage> {
                   ],
                 ),
               ),
-            // Input
+
             Container(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
               child: Row(

@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../../services/scan_history_service.dart';
-import '../../../../../services/health_logic.dart';
+import 'package:mobile_app/src/core/data/remote/services/scan_history_service.dart';
+import 'package:mobile_app/src/core/data/remote/services/health_logic.dart';
+import 'package:mobile_app/src/common/utils/getit_utils.dart';
 
 class ArchivePage extends StatelessWidget {
   const ArchivePage({super.key});
@@ -19,7 +20,7 @@ class ArchivePage extends StatelessWidget {
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
       ),
       body: StreamBuilder<QuerySnapshot>(
-        stream: ScanHistoryService().getScans(),
+        stream: getIt<ScanHistoryService>().getScans(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator(color: AppColors.primaryGreen));
@@ -39,7 +40,7 @@ class ArchivePage extends StatelessWidget {
               DateTime date = (doc['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now();
               final imageUrl = doc['imageUrl'] as String?;
 
-              // Get ingredient predictions
+
               final predictions = doc['ingredientPredictions'] as Map<String, dynamic>? ?? {};
               final ingredients = doc['ingredients'] as List<dynamic>? ?? [];
 
@@ -86,7 +87,7 @@ class ArchivePage extends StatelessWidget {
                                 subtitle: Text("${date.day}/${date.month}/${date.year} - ${date.hour}:${date.minute.toString().padLeft(2, '0')}", style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                                 trailing: IconButton(
                                   icon: const Icon(Icons.delete_outline, color: Colors.grey),
-                                  onPressed: () => ScanHistoryService().deleteScan(doc.id),
+                                  onPressed: () => getIt<ScanHistoryService>().deleteScan(doc.id),
                                 ),
                               ),
                             ],
