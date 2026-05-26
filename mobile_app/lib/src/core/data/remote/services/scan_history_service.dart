@@ -1,11 +1,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-class ScanHistoryService {
-  final CollectionReference _scans = FirebaseFirestore.instance.collection('scans');
-  final User? _user = FirebaseAuth.instance.currentUser;
+import 'package:injectable/injectable.dart';
 
-  // Add a new scan result with ingredient predictions
+@lazySingleton
+class ScanHistoryService {
+  final CollectionReference _scans = FirebaseFirestore.instance.collection(
+    'scans',
+  );
+  User? get _user => FirebaseAuth.instance.currentUser;
+
   Future<DocumentReference> addScan({
     required String result,
     required double confidence,
@@ -14,10 +18,11 @@ class ScanHistoryService {
     String? imageUrl,
     String? productName,
   }) async {
-    if (_user == null) throw Exception('User not logged in');
+    final user = _user;
+    if (user == null) throw Exception('User not logged in');
 
     return await _scans.add({
-      'userId': _user!.uid,
+      'userId': user.uid,
       'result': result,
       'confidence': confidence,
       'ingredients': ingredients ?? [],
@@ -28,55 +33,53 @@ class ScanHistoryService {
     });
   }
 
-  // Get all scans for current user
   Stream<QuerySnapshot> getScans() {
-    if (_user == null) {
+    final user = _user;
+    if (user == null) {
       return const Stream.empty();
     }
     return _scans
-        .where('userId', isEqualTo: _user.uid)
+        .where('userId', isEqualTo: user.uid)
         .orderBy('createdAt', descending: true)
         .snapshots();
   }
 
-  // Get single scan by ID
   Future<DocumentSnapshot?> getScan(String id) async {
     return await _scans.doc(id).get();
   }
 
-  // Delete a scan
   Future<void> deleteScan(String id) async {
     await _scans.doc(id).delete();
   }
 
-  // Get scan count
   Future<int> getScanCount() async {
-    if (_user == null) return 0;
+    final user = _user;
+    if (user == null) return 0;
     final snapshot = await _scans
-        .where('userId', isEqualTo: _user.uid)
+        .where('userId', isEqualTo: user.uid)
         .count()
         .get();
     return snapshot.count ?? 0;
   }
 
-  // Get safe scans count (result = safe)
   Future<int> getSafeCount() async {
-    if (_user == null) return 0;
+    final user = _user;
+    if (user == null) return 0;
     final snapshot = await _scans
-        .where('userId', isEqualTo: _user.uid)
+        .where('userId', isEqualTo: user.uid)
         .where('result', isEqualTo: 'safe')
         .count()
         .get();
     return snapshot.count ?? 0;
   }
 
-  // Get recent scans (last 7 days)
   Future<List<QueryDocumentSnapshot>> getRecentScans(int days) async {
-    if (_user == null) return [];
+    final user = _user;
+    if (user == null) return [];
 
     final cutoff = DateTime.now().subtract(Duration(days: days));
     final snapshot = await _scans
-        .where('userId', isEqualTo: _user.uid)
+        .where('userId', isEqualTo: user.uid)
         .where('createdAt', isGreaterThan: cutoff)
         .orderBy('createdAt', descending: true)
         .get();
@@ -85,7 +88,8 @@ class ScanHistoryService {
   }
 
   Future<List<Map<String, dynamic>>> getWeeklyTrend() async {
-    if (_user == null) return [];
+    final user = _user;
+    if (user == null) return [];
 
     final now = DateTime.now();
     final List<Map<String, dynamic>> trend = [];
@@ -96,14 +100,14 @@ class ScanHistoryService {
       final endOfDay = startOfDay.add(const Duration(days: 1));
 
       final totalSnapshot = await _scans
-          .where('userId', isEqualTo: _user.uid)
+          .where('userId', isEqualTo: user.uid)
           .where('createdAt', isGreaterThan: startOfDay)
           .where('createdAt', isLessThan: endOfDay)
           .count()
           .get();
 
       final safeSnapshot = await _scans
-          .where('userId', isEqualTo: _user.uid)
+          .where('userId', isEqualTo: user.uid)
           .where('result', isEqualTo: 'safe')
           .where('createdAt', isGreaterThan: startOfDay)
           .where('createdAt', isLessThan: endOfDay)
@@ -120,9 +124,9 @@ class ScanHistoryService {
     return trend;
   }
 
-  // Get monthly trend data (last 30 days, grouped by week)
   Future<List<Map<String, dynamic>>> getMonthlyTrend() async {
-    if (_user == null) return [];
+    final user = _user;
+    if (user == null) return [];
 
     final now = DateTime.now();
     final List<Map<String, dynamic>> trend = [];
@@ -132,14 +136,14 @@ class ScanHistoryService {
       final weekStart = weekEnd.subtract(const Duration(days: 7));
 
       final totalSnapshot = await _scans
-          .where('userId', isEqualTo: _user.uid)
+          .where('userId', isEqualTo: user.uid)
           .where('createdAt', isGreaterThan: weekStart)
           .where('createdAt', isLessThan: weekEnd)
           .count()
           .get();
 
       final safeSnapshot = await _scans
-          .where('userId', isEqualTo: _user.uid)
+          .where('userId', isEqualTo: user.uid)
           .where('result', isEqualTo: 'safe')
           .where('createdAt', isGreaterThan: weekStart)
           .where('createdAt', isLessThan: weekEnd)

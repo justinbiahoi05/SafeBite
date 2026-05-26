@@ -1,23 +1,26 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import 'package:injectable/injectable.dart';
+
+@lazySingleton
 class UserProfileService {
   final CollectionReference _users = FirebaseFirestore.instance.collection('users');
-  final User? _user = FirebaseAuth.instance.currentUser;
+  User? get _user => FirebaseAuth.instance.currentUser;
 
-  // Get user profile
   Future<DocumentSnapshot?> getProfile() async {
-    if (_user == null) return null;
-    return await _users.doc(_user.uid).get();
+    final user = _user;
+    if (user == null) return null;
+    return await _users.doc(user.uid).get();
   }
 
-  // Save or update user profile
   Future<void> saveProfile({
     List<String>? healthConditions,
     String? displayName,
     String? photoUrl,
   }) async {
-    if (_user == null) throw Exception('User not logged in');
+    final user = _user;
+    if (user == null) throw Exception('User not logged in');
 
     final data = <String, dynamic>{};
 
@@ -27,14 +30,14 @@ class UserProfileService {
 
     data['updatedAt'] = FieldValue.serverTimestamp();
 
-    await _users.doc(_user.uid).set(data, SetOptions(merge: true));
+    await _users.doc(user.uid).set(data, SetOptions(merge: true));
   }
 
-  // Get health conditions
   Future<List<String>> getHealthConditions() async {
-    if (_user == null) return [];
+    final user = _user;
+    if (user == null) return [];
 
-    final doc = await _users.doc(_user.uid).get();
+    final doc = await _users.doc(user.uid).get();
     if (!doc.exists) return [];
 
     final data = doc.data() as Map<String, dynamic>?;
@@ -47,25 +50,19 @@ class UserProfileService {
     return [];
   }
 
-  // Update health conditions
   Future<void> updateHealthConditions(List<String> conditions) async {
     await saveProfile(healthConditions: conditions);
   }
 
-  // Update display name
   Future<void> updateDisplayName(String name) async {
-    // Update in Firestore
     await saveProfile(displayName: name);
-    // Update in Firebase Auth
     await _user?.updateDisplayName(name);
   }
 
-  // Update photo URL
   Future<void> updatePhotoUrl(String url) async {
     await saveProfile(photoUrl: url);
   }
 
-  // Get display name
   Future<String?> getDisplayName() async {
     final doc = await getProfile();
     if (doc == null || !doc.exists) return null;
@@ -73,7 +70,6 @@ class UserProfileService {
     return data?['displayName'] as String?;
   }
 
-  // Get photo URL
   Future<String?> getPhotoUrl() async {
     final doc = await getProfile();
     if (doc == null || !doc.exists) return null;

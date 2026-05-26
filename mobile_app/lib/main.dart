@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:mobile_app/services/gemini_service.dart';
+import 'package:mobile_app/src/core/data/remote/services/gemini_service.dart';
 import 'firebase_options.dart';
 
 import 'package:mobile_app/src/core/theme/app_colors.dart';
-import 'package:mobile_app/services/onboarding_service.dart';
+import 'package:mobile_app/src/core/data/remote/services/onboarding_service.dart';
 
-import 'services/ai_service.dart';
-import 'services/health_logic.dart'; // THÊM IMPORT NÀY
+import 'package:mobile_app/src/core/data/remote/services/ai_service.dart';
+import 'package:mobile_app/src/core/data/remote/services/health_logic.dart';
+import 'package:mobile_app/src/common/utils/getit_utils.dart';
 import 'src/modules/onboarding/presentation/onboarding_screen.dart';
 import 'src/modules/getstart/presentation/get_started_screen.dart';
 import 'src/modules/auth/presentation/login_screen.dart';
@@ -19,12 +20,13 @@ void main() async {
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
+  configureDependencies();
+
   try {
-    await AIService().initAI();
+    await getIt<AIService>().initAI();
 
     await HealthLogic.loadRawDb();
   } catch (e) {
-    //
   }
 
   runApp(const MyApp());
@@ -78,7 +80,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
   }
 
   Future<void> _checkOnboarding() async {
-    final complete = await OnboardingService.isOnboardingComplete();
+    final complete = await getIt<OnboardingService>().isOnboardingComplete();
     if (mounted) {
       setState(() {
         _isOnboardingComplete = complete;
@@ -89,7 +91,6 @@ class _AuthWrapperState extends State<AuthWrapper> {
 
   @override
   Widget build(BuildContext context) {
-    // Màn hình chờ khi đang kiểm tra dữ liệu
     if (_isLoading) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator(color: AppColors.accent)),
@@ -99,7 +100,6 @@ class _AuthWrapperState extends State<AuthWrapper> {
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
-        // Đang kết nối với Firebase
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             body: Center(
@@ -108,18 +108,14 @@ class _AuthWrapperState extends State<AuthWrapper> {
           );
         }
 
-        // LUỒNG ĐIỀU HƯỚNG THÔNG MINH:
-
-        // 1. Nếu đã đăng nhập (Firebase có User) -> Vào thẳng màn hình chính
         if (snapshot.hasData) {
           return const HomeScreen();
         }
 
-        // 2. Nếu chưa đăng nhập và là người dùng mới -> Xem giới thiệu (Onboarding)
         if (!_isOnboardingComplete) {
           return OnboardingScreen(
             onComplete: () async {
-              await OnboardingService.setOnboardingComplete();
+              await getIt<OnboardingService>().setOnboardingComplete();
               if (mounted) {
                 setState(() => _isOnboardingComplete = true);
               }
@@ -127,7 +123,6 @@ class _AuthWrapperState extends State<AuthWrapper> {
           );
         }
 
-        // 3. Nếu đã xem giới thiệu nhưng chưa đăng nhập -> Vào màn Login
         return const LoginScreen();
       },
     );

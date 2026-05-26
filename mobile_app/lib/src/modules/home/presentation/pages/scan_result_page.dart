@@ -1,13 +1,14 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../../../../services/ai_service.dart';
-import '../../../../../services/health_logic.dart';
-import '../../../../../services/user_profile_service.dart';
-import '../../../../../services/scan_history_service.dart';
-import '../../../../../services/network_service.dart';
-import '../../../../../services/groq_service.dart';
-import '../../../../../services/storage_service.dart';
+import 'package:mobile_app/src/core/data/remote/services/ai_service.dart';
+import 'package:mobile_app/src/core/data/remote/services/health_logic.dart';
+import 'package:mobile_app/src/core/data/remote/services/user_profile_service.dart';
+import 'package:mobile_app/src/core/data/remote/services/scan_history_service.dart';
+import 'package:mobile_app/src/core/data/remote/services/network_service.dart';
+import 'package:mobile_app/src/core/data/remote/services/groq_service.dart';
+import 'package:mobile_app/src/core/data/remote/services/storage_service.dart';
+import 'package:mobile_app/src/common/utils/getit_utils.dart';
 import '../../../../core/theme/app_colors.dart';
 
 class ScanResultPage extends StatefulWidget {
@@ -88,10 +89,10 @@ class _ScanResultPageState extends State<ScanResultPage> {
 
       List<Map<String, String>> temp = [];
 
-      final hasInternet = await NetworkService().hasInternet();
+      final hasInternet = await getIt<NetworkService>().hasInternet();
 
       if (hasInternet) {
-        final labeledResults = await GroqService.analyzeIngredients(
+        final labeledResults = await getIt<GroqService>().analyzeIngredients(
           ingredients: cleanIngredients,
           healthConditions: _userConditions,
         );
@@ -104,7 +105,7 @@ class _ScanResultPageState extends State<ScanResultPage> {
           });
         } else {
           print("DEBUG: Groq failed, using local AI fallback");
-          // Fallback: use local AI if Groq fails
+
           for (var item in cleanIngredients) {
             final pred = _ai.predict(item);
             temp.add({'name': item, 'label': pred['label'] ?? 'unknown'});
@@ -112,7 +113,7 @@ class _ScanResultPageState extends State<ScanResultPage> {
         }
 
         final mockData = {"ingredients": cleanIngredients.join(", ")};
-        final advice = await GroqService.getHealthAdvice(
+        final advice = await getIt<GroqService>().getHealthAdvice(
           ingredientsData: mockData,
           healthConditions: _userConditions,
         );
@@ -210,14 +211,14 @@ class _ScanResultPageState extends State<ScanResultPage> {
     _isSaving = true;
   });
 
-  // 👇 QUAN TRỌNG: cho Flutter 1 frame để vẽ spinner
+
   await Future.delayed(const Duration(milliseconds: 50));
 
   try {
     String? imageUrl;
     if (widget.capturedImageFile != null) {
       imageUrl =
-          await StorageService.uploadScanImage(widget.capturedImageFile!);
+          await getIt<StorageService>().uploadScanImage(widget.capturedImageFile!);
     }
 
     final ingredientPredictions = <String, String>{};
@@ -225,7 +226,7 @@ class _ScanResultPageState extends State<ScanResultPage> {
       ingredientPredictions[item['name']!] = item['label']!;
     }
 
-    await ScanHistoryService().addScan(
+    await getIt<ScanHistoryService>().addScan(
       result: _hasDanger ? 'caution' : 'safe',
       confidence: 0.99,
       ingredients: _analyzedResults.map((e) => e['name']!).toList(),
@@ -574,7 +575,7 @@ class _ScanResultPageState extends State<ScanResultPage> {
   }
 
   Widget _buildCategoryChip(String label) {
-    // Map labels to friendly display names and colors
+
     final categoryInfo = _getCategoryInfo(label);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

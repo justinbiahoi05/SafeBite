@@ -2,9 +2,10 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../../../../services/user_profile_service.dart';
-import '../../../../../services/auth_service.dart';
-import '../../../../../services/gemini_service.dart';
+import 'package:mobile_app/src/core/data/remote/services/user_profile_service.dart';
+import 'package:mobile_app/src/core/data/remote/services/auth_service.dart';
+import 'package:mobile_app/src/core/data/remote/services/gemini_service.dart';
+import 'package:mobile_app/src/common/utils/getit_utils.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../modules/auth/presentation/login_screen.dart';
 
@@ -170,7 +171,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _setApiKey() async {
-    final controller = TextEditingController(text: GeminiService.apiKey ?? '');
+    final controller = TextEditingController(text: getIt<GeminiService>().apiKey ?? '');
     final result = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
@@ -214,7 +215,7 @@ class _ProfilePageState extends State<ProfilePage> {
     );
 
     if (result != null) {
-      GeminiService.setApiKey(result);
+      getIt<GeminiService>().setApiKey(result);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -286,7 +287,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     icon: Icons.key,
                     iconColor: Colors.purple,
                     title: "Gemini API Key",
-                    subtitle: GeminiService.apiKey?.isNotEmpty == true
+                    subtitle: getIt<GeminiService>().apiKey?.isNotEmpty == true
                         ? "API key configured"
                         : "Not set",
                     onTap: _setApiKey,
@@ -386,7 +387,7 @@ class _ProfilePageState extends State<ProfilePage> {
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           children: [
-            // Header
+
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -424,7 +425,7 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             const SizedBox(height: 32),
 
-            // Profile Card
+
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
@@ -439,7 +440,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               child: Column(
                 children: [
-                  // Avatar
+
                   GestureDetector(
                     onTap: _isUploading ? null : _changePhoto,
                     child: Stack(
@@ -493,7 +494,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Name
+
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -516,7 +517,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     ],
                   ),
 
-                  // Stats row
+
                   Container(
                     margin: const EdgeInsets.only(top: 16),
                     padding: const EdgeInsets.symmetric(
@@ -552,7 +553,7 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             const SizedBox(height: 32),
 
-            // Health Conditions Section
+
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -629,7 +630,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Search input
+
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     decoration: BoxDecoration(
@@ -678,7 +679,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                   const SizedBox(height: 16),
 
-                  // 2-Column Grid Layout for Health Conditions
+
                   _HealthConditionsGrid(
                     healthMap: _healthMap,
                     healthGroups: _healthGroups,
@@ -693,7 +694,7 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             const SizedBox(height: 32),
 
-            // Action Buttons
+
             _buildActionButton(
               icon: Icons.logout,
               color: Colors.redAccent,
@@ -710,7 +711,7 @@ class _ProfilePageState extends State<ProfilePage> {
             _buildActionButton(
               icon: Icons.key,
               color: AppColors.primaryGreen,
-              label: GeminiService.apiKey?.isNotEmpty == true
+              label: getIt<GeminiService>().apiKey?.isNotEmpty == true
                   ? "API Key Set"
                   : "Set API Key",
               onTap: _setApiKey,
@@ -759,7 +760,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 }
 
-// Premium Health Chip with Gradient & Animation
+
 class _PremiumHealthChip extends StatefulWidget {
   final String label;
   final bool isSelected;
@@ -873,7 +874,7 @@ class _PremiumHealthChipState extends State<_PremiumHealthChip>
   }
 }
 
-// 2-Column Grid Layout for Health Conditions
+
 class _HealthConditionsGrid extends StatelessWidget {
   final Map<String, bool> healthMap;
   final Map<String, List<String>> healthGroups;
@@ -955,7 +956,7 @@ class _HealthConditionsGrid extends StatelessWidget {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Group Header
+
               Padding(
                 padding: const EdgeInsets.only(bottom: 12, top: 8),
                 child: Row(
@@ -977,7 +978,7 @@ class _HealthConditionsGrid extends StatelessWidget {
                   ],
                 ),
               ),
-              // 2-Column Grid
+
               GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -1006,7 +1007,7 @@ class _HealthConditionsGrid extends StatelessWidget {
   }
 }
 
-// Equal-sized Health Chip for Grid
+
 class _EqualSizeHealthChip extends StatefulWidget {
   final String label;
   final bool isSelected;

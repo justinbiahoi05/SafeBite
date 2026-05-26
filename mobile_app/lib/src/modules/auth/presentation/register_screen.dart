@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mobile_app/src/core/theme/app_colors.dart';
-import 'package:mobile_app/services/auth_service.dart';
+import 'package:mobile_app/src/core/data/remote/services/auth_service.dart';
 import 'component/auth_text_field.dart';
 import 'component/auth_button.dart';
 import 'component/auth_header.dart';
@@ -23,7 +23,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   String? _error;
 
   Future<void> _register() async {
-    // Validation
     if (_nameController.text.isEmpty ||
         _emailController.text.isEmpty ||
         _passwordController.text.isEmpty ||
@@ -115,7 +114,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 30),
 
-                // Register Card
                 Container(
                   padding: const EdgeInsets.all(28.0),
                   decoration: BoxDecoration(
@@ -152,7 +150,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                       const SizedBox(height: 32),
 
-                      // Name Field
                       AuthTextField(
                         controller: _nameController,
                         label: 'FULL NAME',
@@ -161,7 +158,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 20),
 
-                      // Email Field
                       AuthTextField(
                         controller: _emailController,
                         label: 'EMAIL ADDRESS',
@@ -170,7 +166,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 20),
 
-                      // Password Field
                       AuthTextField(
                         controller: _passwordController,
                         label: 'PASSWORD',
@@ -180,7 +175,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 20),
 
-                      // Confirm Password Field
                       AuthTextField(
                         controller: _confirmPasswordController,
                         label: 'CONFIRM PASSWORD',
@@ -190,7 +184,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 32),
 
-                      // Sign Up Button
                       AuthButton(
                         text: 'Sign Up',
                         isLoading: _isLoading,
@@ -227,7 +220,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                       const SizedBox(height: 32),
 
-                      // Login Link
                       Center(
                         child: RichText(
                           text: TextSpan(
@@ -259,7 +251,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                 const SizedBox(height: 32),
 
-                // Security Badge
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,

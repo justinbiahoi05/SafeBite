@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../../../../services/scan_history_service.dart';
+import 'package:mobile_app/src/core/data/remote/services/scan_history_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import 'scan_detail_page.dart';
 
@@ -14,7 +14,7 @@ class InsightsPage extends StatefulWidget {
 }
 
 class _InsightsPageState extends State<InsightsPage> {
-  // Filter state
+
   String _filterMode = 'today';
   DateTime? _customStartDate;
   DateTime? _customEndDate;
@@ -22,7 +22,7 @@ class _InsightsPageState extends State<InsightsPage> {
   List<QueryDocumentSnapshot> _filteredScans = [];
   bool _isLoading = true;
 
-  // Cache weekly data to prevent chart rebuilds
+
   List<Map<String, dynamic>>? _weeklyDataCache;
 
   final List<_QuickFilter> _quickFilters = [
@@ -38,10 +38,10 @@ class _InsightsPageState extends State<InsightsPage> {
   }
 
   Future<void> _loadData() async {
-    // Load weekly trend once
+
     _weeklyDataCache = await ScanHistoryService().getWeeklyTrend();
 
-    // Listen to scans stream
+
     ScanHistoryService().getScans().listen((snapshot) {
       if (mounted) {
         setState(() {
@@ -60,7 +60,7 @@ class _InsightsPageState extends State<InsightsPage> {
         _customStartDate = null;
         _customEndDate = null;
       }
-      // Only filter the list - chart stays the same
+
       _filteredScans = _filterScans(_allScans);
     });
   }
@@ -124,7 +124,7 @@ class _InsightsPageState extends State<InsightsPage> {
           ? const Center(child: CircularProgressIndicator(color: AppColors.primaryGreen))
           : CustomScrollView(
               slivers: [
-                // App Bar
+
                 SliverAppBar(
                   backgroundColor: Colors.transparent,
                   elevation: 0,
@@ -142,7 +142,7 @@ class _InsightsPageState extends State<InsightsPage> {
                   centerTitle: true,
                 ),
 
-                // Weekly Chart (static - doesn't rebuild on filter change)
+
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -165,7 +165,7 @@ class _InsightsPageState extends State<InsightsPage> {
                   ),
                 ),
 
-                // Date Filter Section (only this section triggers filter update)
+
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.all(24),
@@ -195,7 +195,7 @@ class _InsightsPageState extends State<InsightsPage> {
                         ),
                         const SizedBox(height: 16),
 
-                        // Filter Bar
+
                         _DateFilterBar(
                           quickFilters: _quickFilters,
                           selectedFilter: _filterMode,
@@ -203,7 +203,7 @@ class _InsightsPageState extends State<InsightsPage> {
                           onCalendarTap: () => _showStyledDateRangePicker(context),
                         ),
 
-                        // Custom Range Display
+
                         if (_filterMode == 'custom' && _customStartDate != null) ...[
                           const SizedBox(height: 12),
                           _CustomRangeChip(
@@ -217,7 +217,7 @@ class _InsightsPageState extends State<InsightsPage> {
                   ),
                 ),
 
-                // Scan List (rebuilds only when filter changes)
+
                 _buildScanList(),
 
                 const SliverToBoxAdapter(child: SizedBox(height: 100)),
@@ -309,7 +309,7 @@ class _InsightsPageState extends State<InsightsPage> {
     builder: (context, child) {
       return Theme(
         data: Theme.of(context).copyWith(
-          brightness: Brightness.light, // 🔥 ép sáng hoàn toàn
+          brightness: Brightness.light,
 
           colorScheme: const ColorScheme.light(
             primary: AppColors.primaryGreen,
@@ -320,7 +320,7 @@ class _InsightsPageState extends State<InsightsPage> {
 
           dialogBackgroundColor: Colors.white,
           scaffoldBackgroundColor: Colors.white,
-          canvasColor: Colors.white, // 🔥 fix nền bị ám
+          canvasColor: Colors.white,
 
           textTheme: Theme.of(context).textTheme.copyWith(
             headlineMedium: const TextStyle(
@@ -335,10 +335,9 @@ class _InsightsPageState extends State<InsightsPage> {
             ),
           ),
 
-          // 🔥 thêm cái này để UI “clear” hơn
           datePickerTheme: DatePickerThemeData(
             backgroundColor: Colors.white,
-            surfaceTintColor: Colors.transparent, // bỏ lớp phủ xám
+            surfaceTintColor: Colors.transparent,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
             ),
@@ -382,7 +381,7 @@ class _InsightsPageState extends State<InsightsPage> {
   }
 }
 
-// Separate widget for chart - uses cached data, doesn't rebuild on filter change
+
 class _WeeklyChart extends StatelessWidget {
   final List<Map<String, dynamic>>? cachedData;
 
@@ -467,7 +466,7 @@ class _WeeklyChart extends StatelessWidget {
   }
 }
 
-// Scan List Item - extracted for efficient rebuild
+
 class _ScanListItem extends StatelessWidget {
   final QueryDocumentSnapshot scan;
   final bool isSafe;

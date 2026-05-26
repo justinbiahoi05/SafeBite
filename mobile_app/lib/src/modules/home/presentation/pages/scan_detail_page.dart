@@ -8,7 +8,7 @@ class ScanDetailPage extends StatelessWidget {
 
   const ScanDetailPage({super.key, required this.scan});
 
-  // Safe field getter that returns null instead of throwing
+
   T? _getField<T>(String key) {
     try {
       return scan.get(key) as T?;
@@ -27,7 +27,7 @@ class ScanDetailPage extends StatelessWidget {
       backgroundColor: AppColors.scaffoldBackgroundLight,
       body: CustomScrollView(
         slivers: [
-          // App Bar with gradient
+
           SliverAppBar(
             expandedHeight: 200,
             pinned: true,
@@ -88,14 +88,14 @@ class ScanDetailPage extends StatelessWidget {
             ),
           ),
 
-          // Content
+
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Product Name Card
+
                   _buildCard(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -122,7 +122,7 @@ class ScanDetailPage extends StatelessWidget {
                     ),
                   ),
 
-                  // Product Image Card (if available)
+
                   if (imageUrl != null && imageUrl.isNotEmpty) ...[
                     const SizedBox(height: 16),
                     _buildCard(
@@ -167,7 +167,7 @@ class ScanDetailPage extends StatelessWidget {
 
                   const SizedBox(height: 16),
 
-                  // Scan Info Card
+
                   _buildCard(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -206,7 +206,7 @@ class ScanDetailPage extends StatelessWidget {
 
                   const SizedBox(height: 16),
 
-                  // Ingredients Card
+
                   _buildCard(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -226,7 +226,7 @@ class ScanDetailPage extends StatelessWidget {
                     ),
                   ),
 
-                  // Warning Section (if not safe)
+
                   if (!isSafe) ...[
                     const SizedBox(height: 16),
                     _buildWarningCard(),
@@ -234,7 +234,7 @@ class ScanDetailPage extends StatelessWidget {
 
                   const SizedBox(height: 24),
 
-                  // Health Warnings
+
                   _buildHealthWarnings(),
 
                   const SizedBox(height: 100),

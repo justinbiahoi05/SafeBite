@@ -1,15 +1,18 @@
 import 'package:flutter/services.dart';
 
+import 'package:injectable/injectable.dart';
+
+@lazySingleton
 class HapticService {
-  static Future<void> alertDanger() async {
-    // Rung mạnh 3 lần liên tiếp để cảnh báo
+  Future<void> alertDanger() async {
+
     for (int i = 0; i < 3; i++) {
       await HapticFeedback.heavyImpact();
       await Future.delayed(const Duration(milliseconds: 150));
     }
   }
 
-  static Future<void> alertSuccess() async {
+  Future<void> alertSuccess() async {
     await HapticFeedback.lightImpact();
   }
 }

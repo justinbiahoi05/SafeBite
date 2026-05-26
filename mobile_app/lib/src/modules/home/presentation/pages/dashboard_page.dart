@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../../services/scan_history_service.dart';
-import 'archive_page.dart'; // THÊM IMPORT NÀY
+import 'package:mobile_app/src/core/data/remote/services/scan_history_service.dart';
+import 'package:mobile_app/src/common/utils/getit_utils.dart';
+import 'archive_page.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -23,7 +24,7 @@ class _DashboardPageState extends State<DashboardPage> {
       decoration: const BoxDecoration(color: AppColors.scaffoldBackgroundLight),
       child: SafeArea(
         child: StreamBuilder<QuerySnapshot>(
-          stream: ScanHistoryService().getScans(),
+          stream: getIt<ScanHistoryService>().getScans(),
           builder: (context, snapshot) {
             final scans = snapshot.data?.docs ?? [];
             final total = scans.length;
@@ -41,7 +42,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   const SizedBox(height: 12),
                   _buildVitalityText(score),
                   const SizedBox(height: 24),
-                  
+
                   _SafetyScoreCard(score: score, totalScans: total, safeScans: safeScans),
                   const SizedBox(height: 24),
 
@@ -72,9 +73,9 @@ class _DashboardPageState extends State<DashboardPage> {
                     ],
                   ),
                   const SizedBox(height: 32),
-                  
-                  // Recent Scans moved to Insights Page
-                  const SizedBox(height: 100), 
+
+
+                  const SizedBox(height: 100),
                 ],
               ),
             );

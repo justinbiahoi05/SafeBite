@@ -3,12 +3,15 @@ import 'package:http/http.dart' as http;
 import 'package:camera/camera.dart';
 import 'package:mobile_app/src/core/data/remote/services/secrets.dart';
 
+import 'package:injectable/injectable.dart';
+
+@lazySingleton
 class GroqService {
-  static const String _apiKey = Secrets.groqApiKey;
-  static const String _baseUrl =
+  final String _apiKey = Secrets.groqApiKey;
+  final String _baseUrl =
       "https://api.groq.com/openai/v1/chat/completions";
 
-  static Future<Map<String, dynamic>?> extractIngredients(XFile photo) async {
+  Future<Map<String, dynamic>?> extractIngredients(XFile photo) async {
     final bytes = await photo.readAsBytes();
     final base64Image = base64Encode(bytes);
 
@@ -55,7 +58,7 @@ class GroqService {
     }
   }
 
-  static Future<String?> getHealthAdvice({
+  Future<String?> getHealthAdvice({
     required Map<String, dynamic> ingredientsData,
     required List<String> healthConditions,
   }) async {
@@ -102,7 +105,7 @@ class GroqService {
     }
   }
 
-  static Future<Map<String, String>?> analyzeIngredients({
+  Future<Map<String, String>?> analyzeIngredients({
     required List<String> ingredients,
     required List<String> healthConditions,
   }) async {
@@ -151,7 +154,7 @@ class GroqService {
     }
   }
 
-  static Future<String?> chat(List<Map<String, String>> messages) async {
+  Future<String?> chat(List<Map<String, String>> messages) async {
     final groqMessages = messages
         .map(
           (m) => {"role": m["role"] ?? "user", "content": m["content"] ?? ""},

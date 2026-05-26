@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:mobile_app/services/auth_service.dart';
-import 'package:mobile_app/services/user_profile_service.dart';
-import 'package:mobile_app/services/gemini_service.dart';
+import 'package:mobile_app/src/core/data/remote/services/auth_service.dart';
+import 'package:mobile_app/src/core/data/remote/services/user_profile_service.dart';
+import 'package:mobile_app/src/core/data/remote/services/gemini_service.dart';
+import 'package:mobile_app/src/common/utils/getit_utils.dart';
 import 'package:mobile_app/src/core/theme/app_colors.dart';
 import 'package:mobile_app/src/modules/auth/presentation/login_screen.dart';
 
@@ -60,7 +61,7 @@ class _SettingsPageState extends State<SettingsPage> {
     setState(() => _isUploading = true);
 
     try {
-      // Upload to Firebase Storage
+
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) return;
 
@@ -73,7 +74,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
       final url = await storageRef.getDownloadURL();
 
-      // Update in Firestore
+
       await _profileService.updatePhotoUrl(url);
 
       setState(() {
@@ -158,7 +159,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _setApiKey() async {
-    final controller = TextEditingController(text: GeminiService.apiKey ?? '');
+    final controller = TextEditingController(text: getIt<GeminiService>().apiKey ?? '');
 
     final result = await showDialog<String>(
       context: context,
@@ -197,7 +198,7 @@ class _SettingsPageState extends State<SettingsPage> {
     );
 
     if (result != null) {
-      GeminiService.setApiKey(result);
+      getIt<GeminiService>().setApiKey(result);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -305,7 +306,7 @@ class _SettingsPageState extends State<SettingsPage> {
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
-            // Profile Header
+
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
@@ -368,7 +369,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
             const SizedBox(height: 24),
 
-            // Settings Options
+
             _SettingsTile(
               icon: Icons.camera_alt_outlined,
               title: 'Change Photo',

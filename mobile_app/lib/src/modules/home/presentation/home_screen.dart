@@ -17,7 +17,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _currentIndex = 0; // Default to Scanner page
+  int _currentIndex = 0;
 
   final List<Widget> _pages = const [
     ScannerPage(),
@@ -28,7 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Lấy thông tin user hiện tại
+
     final user = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
@@ -38,44 +38,44 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
-        
-        // 1. AVATAR ĐỒNG BỘ REAL-TIME TỪ FIREBASE
+
+
         leading: Padding(
           padding: const EdgeInsets.all(8.0),
           child: StreamBuilder<DocumentSnapshot>(
-            stream: user != null 
-                ? FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots() 
+            stream: user != null
+                ? FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots()
                 : const Stream.empty(),
             builder: (context, snapshot) {
               String? photoUrl;
-              
+
               if (snapshot.hasData && snapshot.data!.data() != null) {
                 final data = snapshot.data!.data() as Map<String, dynamic>;
                 photoUrl = data['photoUrl'];
               }
-              // Dự phòng lấy từ Firebase Auth nếu Firestore chưa có
+
               photoUrl ??= user?.photoURL;
 
               return CircleAvatar(
                 radius: 20,
                 backgroundColor: AppColors.scaffoldBackgroundLight,
-                
-                // --- ĐÃ SỬA Ở ĐÂY: Xử lý cả ảnh link web lẫn ảnh Base64 ---
-                backgroundImage: photoUrl != null 
-                    ? (photoUrl.startsWith('http') 
-                        ? NetworkImage(photoUrl) 
+
+
+                backgroundImage: photoUrl != null
+                    ? (photoUrl.startsWith('http')
+                        ? NetworkImage(photoUrl)
                         : MemoryImage(base64Decode(photoUrl)) as ImageProvider)
                     : null,
-                // --------------------------------------------------------
-                
-                child: photoUrl == null 
-                    ? const Icon(Icons.person, color: AppColors.textSecondary) 
+
+
+                child: photoUrl == null
+                    ? const Icon(Icons.person, color: AppColors.textSecondary)
                     : null,
               );
             },
           ),
         ),
-        
+
         title: const Text(
           'SafeBite',
           style: TextStyle(
@@ -84,15 +84,15 @@ class _HomeScreenState extends State<HomeScreen> {
             fontSize: 18,
           ),
         ),
-        
-        // 2. THAY TIA SÉT BẰNG ICON KHIÊN Y TẾ (HEALTH & SAFETY)
+
+
         actions: [
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: CircleAvatar(
               backgroundColor: AppColors.primaryGreen.withOpacity(0.1),
               child: const Icon(
-                Icons.health_and_safety_rounded, // Icon chuẩn y khoa
+                Icons.health_and_safety_rounded,
                 color: AppColors.primaryGreen,
                 size: 24,
               ),
