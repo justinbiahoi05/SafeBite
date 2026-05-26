@@ -319,8 +319,8 @@ const List<OnboardingPageData> onboardingPages = [
       ),
       FeatureChipData(icon: Icons.insights_rounded, label: '+14% vitality'),
     ],
-    accent: Color(0xFF48D47D),
-    softAccent: Color(0xFFA7F3C1),
+    accent: AppColors.onboardingAccent2,
+    softAccent: AppColors.onboardingAccentSoft2,
     heroKind: HeroKind.analytics,
   ),
   OnboardingPageData(
@@ -337,8 +337,8 @@ const List<OnboardingPageData> onboardingPages = [
       ),
       FeatureChipData(icon: Icons.shield_rounded, label: 'Smart protection'),
     ],
-    accent: Color(0xFF22C55E),
-    softAccent: Color(0xFF97F0B9),
+    accent: AppColors.accent,
+    softAccent: AppColors.onboardingAccentSoft3,
     heroKind: HeroKind.guardian,
   ),
 ];

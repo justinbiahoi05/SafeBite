@@ -824,7 +824,7 @@ class _PremiumHealthChipState extends State<_PremiumHealthChip>
               decoration: BoxDecoration(
                 gradient: widget.isSelected
                     ? const LinearGradient(
-                        colors: [AppColors.primaryGreen, Color(0xFF22C55E)],
+                        colors: [AppColors.primaryGreen, AppColors.accent],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       )
@@ -1066,7 +1066,7 @@ class _EqualSizeHealthChipState extends State<_EqualSizeHealthChip>
               decoration: BoxDecoration(
                 gradient: widget.isSelected
                     ? const LinearGradient(
-                        colors: [AppColors.primaryGreen, Color(0xFF22C55E)],
+                        colors: [AppColors.primaryGreen, AppColors.accent],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       )

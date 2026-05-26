@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:camera/camera.dart';
+import 'package:mobile_app/services/secrets.dart';
 
 class GroqService {
   static const String _apiKey = Secrets.groqApiKey;
@@ -156,10 +157,11 @@ class GroqService {
   /// CHAT: Send conversation history to get AI response
   static Future<String?> chat(List<Map<String, String>> messages) async {
     // Convert messages to Groq format
-    final groqMessages = messages.map((m) => {
-      "role": m["role"] ?? "user",
-      "content": m["content"] ?? "",
-    }).toList();
+    final groqMessages = messages
+        .map(
+          (m) => {"role": m["role"] ?? "user", "content": m["content"] ?? ""},
+        )
+        .toList();
 
     final payload = {
       "model": "llama-3.3-70b-versatile",
@@ -187,4 +189,3 @@ class GroqService {
     }
   }
 }
-

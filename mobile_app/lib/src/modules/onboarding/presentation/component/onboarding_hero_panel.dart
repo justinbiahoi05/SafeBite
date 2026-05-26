@@ -17,8 +17,8 @@ class OnboardingHeroPanel extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              const Color(0xFF101C16),
-              const Color(0xFF06100B),
+              AppColors.onboardingGradientStart,
+              AppColors.onboardingGradientEnd,
               page.accent.withValues(alpha: 0.12),
             ],
           ),
@@ -412,7 +412,7 @@ class _GlassChip extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
-            color: const Color(0xFF0D1812).withValues(alpha: 0.55),
+            color: AppColors.glassBackground.withValues(alpha: 0.55),
             borderRadius: BorderRadius.circular(999),
             border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
           ),
@@ -452,7 +452,7 @@ class _StatBubble extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF0D1812).withValues(alpha: 0.74),
+        color: AppColors.glassBackground.withValues(alpha: 0.74),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
         boxShadow: [

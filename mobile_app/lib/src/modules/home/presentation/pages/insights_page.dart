@@ -610,7 +610,7 @@ class _DateFilterBar extends StatelessWidget {
                       decoration: BoxDecoration(
                         gradient: isSelected
                           ? const LinearGradient(
-                              colors: [AppColors.primaryGreen, Color(0xFF22C55E)],
+                              colors: [AppColors.primaryGreen, AppColors.accent],
                             )
                           : null,
                         borderRadius: BorderRadius.circular(12),

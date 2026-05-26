@@ -164,7 +164,7 @@ class _ScanResultPageState extends State<ScanResultPage> {
             Text(
               "Health Advice",
               style: TextStyle(
-                color: Color(0xFF1E1E1E),
+                color: AppColors.textPrimary,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -174,7 +174,7 @@ class _ScanResultPageState extends State<ScanResultPage> {
         content: Text(
           advice,
           style: const TextStyle(
-            color: Color(0xFF1E1E1E),
+            color: AppColors.textPrimary,
             height: 1.6,
             fontSize: 15,
           ),

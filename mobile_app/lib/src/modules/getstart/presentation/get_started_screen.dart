@@ -132,7 +132,7 @@ class GetStartedScreen extends StatelessWidget {
                     child: Container(
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [AppColors.accent, Color(0xFF16A34A)],
+                          colors: [AppColors.accent, AppColors.primaryGreen],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
