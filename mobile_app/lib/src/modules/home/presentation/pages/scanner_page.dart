@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:image_picker/image_picker.dart';
 import 'scan_result_page.dart';
-import 'package:mobile_app/src/core/data/remote/services/groq_service.dart';
+import 'package:mobile_app/src/modules/home/domain/repository/scan_repository.dart';
 import 'package:mobile_app/src/common/utils/getit_utils.dart';
 import '../../../../core/theme/app_colors.dart';
 
@@ -101,7 +101,7 @@ class _ScannerPageState extends State<ScannerPage> {
       _capturedImageFile = imageFile;
     });
     try {
-      final resultJson = await getIt<GroqService>().extractIngredients(
+      final resultJson = await getIt<ScanRepository>().extractIngredients(
         XFile(imageFile.path),
       );
 

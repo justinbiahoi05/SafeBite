@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/theme/app_colors.dart';
-import 'package:mobile_app/src/core/data/remote/services/scan_history_service.dart';
+import 'package:mobile_app/src/modules/home/domain/repository/scan_repository.dart';
 import 'package:mobile_app/src/common/utils/getit_utils.dart';
 import 'archive_page.dart';
 
@@ -24,7 +24,7 @@ class _DashboardPageState extends State<DashboardPage> {
       decoration: const BoxDecoration(color: AppColors.scaffoldBackgroundLight),
       child: SafeArea(
         child: StreamBuilder<QuerySnapshot>(
-          stream: getIt<ScanHistoryService>().getScans(),
+          stream: getIt<ScanRepository>().getScans(),
           builder: (context, snapshot) {
             final scans = snapshot.data?.docs ?? [];
             final total = scans.length;
