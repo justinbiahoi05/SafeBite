@@ -2,11 +2,14 @@ import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-class StorageService {
-  static final FirebaseStorage _storage = FirebaseStorage.instance;
+import 'package:injectable/injectable.dart';
 
-  /// Upload image to Firebase Storage and return the download URL
-  static Future<String?> uploadScanImage(File imageFile) async {
+@lazySingleton
+class StorageService {
+  final FirebaseStorage _storage = FirebaseStorage.instance;
+
+
+  Future<String?> uploadScanImage(File imageFile) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return null;
 

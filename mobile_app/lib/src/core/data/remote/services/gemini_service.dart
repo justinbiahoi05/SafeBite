@@ -1,19 +1,22 @@
 import 'dart:convert';
 import 'package:google_generative_ai/google_generative_ai.dart';
 
-class GeminiService {
-  static const String _modelName = 'gemini-2.5-flash';
-  static GenerativeModel? _model;
-  static String? _apiKey;
+import 'package:injectable/injectable.dart';
 
-  static void setApiKey(String key) {
+@lazySingleton
+class GeminiService {
+  final String _modelName = 'gemini-2.5-flash';
+  GenerativeModel? _model;
+  String? _apiKey;
+
+  void setApiKey(String key) {
     _apiKey = key;
     _model = GenerativeModel(model: _modelName, apiKey: key);
   }
 
-  static String? get apiKey => _apiKey;
+  String? get apiKey => _apiKey;
 
-  static Future<Map<String, String>?> analyzeIngredients({
+  Future<Map<String, String>?> analyzeIngredients({
     required List<String> ingredients,
     required List<String> healthConditions,
   }) async {
@@ -39,7 +42,7 @@ class GeminiService {
     }
   }
 
-  static String _buildPrompt(
+  String _buildPrompt(
     List<String> ingredients,
     List<String> healthConditions,
   ) {
@@ -72,7 +75,7 @@ Only output valid JSON, no other text.
 ''';
   }
 
-  static Map<String, String>? _parseResponse(String response) {
+  Map<String, String>? _parseResponse(String response) {
     try {
       final jsonStart = response.indexOf('{');
       final jsonEnd = response.lastIndexOf('}') + 1;
