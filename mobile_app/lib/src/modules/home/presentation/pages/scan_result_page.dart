@@ -1,13 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:mobile_app/src/core/data/remote/services/ai_service.dart';
 import 'package:mobile_app/src/core/data/remote/services/health_logic.dart';
-import 'package:mobile_app/src/core/data/remote/services/user_profile_service.dart';
-import 'package:mobile_app/src/core/data/remote/services/scan_history_service.dart';
-import 'package:mobile_app/src/core/data/remote/services/network_service.dart';
-import 'package:mobile_app/src/core/data/remote/services/groq_service.dart';
-import 'package:mobile_app/src/core/data/remote/services/storage_service.dart';
+import 'package:mobile_app/src/modules/home/domain/repository/user_repository.dart';
+import 'package:mobile_app/src/modules/home/domain/repository/scan_repository.dart';
 import 'package:mobile_app/src/common/utils/getit_utils.dart';
 import '../../../../core/theme/app_colors.dart';
 
@@ -28,7 +24,8 @@ class ScanResultPage extends StatefulWidget {
 }
 
 class _ScanResultPageState extends State<ScanResultPage> {
-  final AIService _ai = AIService();
+  final _userRepository = getIt<UserRepository>();
+  final _scanRepository = getIt<ScanRepository>();
   List<Map<String, String>> _analyzedResults = [];
   List<String> _userConditions = [];
 
@@ -77,7 +74,7 @@ class _ScanResultPageState extends State<ScanResultPage> {
         _isAnalyzing = true;
       });
 
-      _userConditions = await UserProfileService().getHealthConditions();
+      _userConditions = await _userRepository.getHealthConditions();
 
       List<String> cleanIngredients = _textController.text
           .split(RegExp(r'[,\n]'))
@@ -89,10 +86,10 @@ class _ScanResultPageState extends State<ScanResultPage> {
 
       List<Map<String, String>> temp = [];
 
-      final hasInternet = await getIt<NetworkService>().hasInternet();
+      final hasInternet = await _scanRepository.hasInternet();
 
       if (hasInternet) {
-        final labeledResults = await getIt<GroqService>().analyzeIngredients(
+        final labeledResults = await _scanRepository.analyzeIngredients(
           ingredients: cleanIngredients,
           healthConditions: _userConditions,
         );
@@ -107,13 +104,13 @@ class _ScanResultPageState extends State<ScanResultPage> {
           print("DEBUG: Groq failed, using local AI fallback");
 
           for (var item in cleanIngredients) {
-            final pred = _ai.predict(item);
+            final pred = _scanRepository.predictLocal(item);
             temp.add({'name': item, 'label': pred['label'] ?? 'unknown'});
           }
         }
 
         final mockData = {"ingredients": cleanIngredients.join(", ")};
-        final advice = await getIt<GroqService>().getHealthAdvice(
+        final advice = await _scanRepository.getHealthAdvice(
           ingredientsData: mockData,
           healthConditions: _userConditions,
         );
@@ -123,7 +120,7 @@ class _ScanResultPageState extends State<ScanResultPage> {
         }
       } else {
         for (var item in cleanIngredients) {
-          final pred = _ai.predict(item);
+          final pred = _scanRepository.predictLocal(item);
           temp.add({'name': item, 'label': pred['label'] ?? 'unknown'});
         }
       }
@@ -218,7 +215,7 @@ class _ScanResultPageState extends State<ScanResultPage> {
     String? imageUrl;
     if (widget.capturedImageFile != null) {
       imageUrl =
-          await getIt<StorageService>().uploadScanImage(widget.capturedImageFile!);
+          await _scanRepository.uploadScanImage(widget.capturedImageFile!);
     }
 
     final ingredientPredictions = <String, String>{};
@@ -226,7 +223,7 @@ class _ScanResultPageState extends State<ScanResultPage> {
       ingredientPredictions[item['name']!] = item['label']!;
     }
 
-    await getIt<ScanHistoryService>().addScan(
+    await _scanRepository.addScan(
       result: _hasDanger ? 'caution' : 'safe',
       confidence: 0.99,
       ingredients: _analyzedResults.map((e) => e['name']!).toList(),

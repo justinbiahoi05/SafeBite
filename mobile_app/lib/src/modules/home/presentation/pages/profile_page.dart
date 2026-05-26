@@ -2,9 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:mobile_app/src/core/data/remote/services/user_profile_service.dart';
-import 'package:mobile_app/src/core/data/remote/services/auth_service.dart';
-import 'package:mobile_app/src/core/data/remote/services/gemini_service.dart';
+import 'package:mobile_app/src/modules/home/domain/repository/user_repository.dart';
+import 'package:mobile_app/src/modules/auth/domain/repository/auth_repository.dart';
 import 'package:mobile_app/src/common/utils/getit_utils.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../modules/auth/presentation/login_screen.dart';
@@ -17,7 +16,8 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  final UserProfileService _service = UserProfileService();
+  final UserRepository _userRepository = getIt<UserRepository>();
+  final AuthRepository _authRepository = getIt<AuthRepository>();
 
   String? _displayName;
   String? _photoData;
@@ -74,9 +74,9 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _loadData() async {
     try {
-      final name = await _service.getDisplayName();
-      final photo = await _service.getPhotoUrl();
-      final savedConditions = await _service.getHealthConditions();
+      final name = await _userRepository.getDisplayName();
+      final photo = await _userRepository.getPhotoUrl();
+      final savedConditions = await _userRepository.getHealthConditions();
       final user = FirebaseAuth.instance.currentUser;
 
       if (mounted) {
@@ -108,7 +108,7 @@ class _ProfilePageState extends State<ProfilePage> {
     try {
       final bytes = await image.readAsBytes();
       String base64Image = base64Encode(bytes);
-      await _service.updatePhotoUrl(base64Image);
+      await _userRepository.updatePhotoUrl(base64Image);
 
       if (mounted) {
         setState(() => _photoData = base64Image);
@@ -150,7 +150,7 @@ class _ProfilePageState extends State<ProfilePage> {
         actions: [
           ElevatedButton(
             onPressed: () async {
-              await _service.updateDisplayName(controller.text);
+              await _userRepository.updateDisplayName(controller.text);
               setState(() => _displayName = controller.text);
               Navigator.pop(context);
             },
@@ -165,13 +165,13 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _saveHealth() async {
-    await _service.updateHealthConditions(
+    await _userRepository.updateHealthConditions(
       _healthMap.entries.where((e) => e.value).map((e) => e.key).toList(),
     );
   }
 
   Future<void> _setApiKey() async {
-    final controller = TextEditingController(text: getIt<GeminiService>().apiKey ?? '');
+    final controller = TextEditingController(text: _userRepository.getGeminiApiKey() ?? '');
     final result = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
@@ -215,7 +215,7 @@ class _ProfilePageState extends State<ProfilePage> {
     );
 
     if (result != null) {
-      getIt<GeminiService>().setApiKey(result);
+      _userRepository.setGeminiApiKey(result);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -287,7 +287,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     icon: Icons.key,
                     iconColor: Colors.purple,
                     title: "Gemini API Key",
-                    subtitle: getIt<GeminiService>().apiKey?.isNotEmpty == true
+                    subtitle: _userRepository.getGeminiApiKey()?.isNotEmpty == true
                         ? "API key configured"
                         : "Not set",
                     onTap: _setApiKey,
@@ -700,7 +700,7 @@ class _ProfilePageState extends State<ProfilePage> {
               color: Colors.redAccent,
               label: "Log Out",
               onTap: () async {
-                await AuthService().signOut();
+                await _authRepository.signOut();
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(builder: (_) => const LoginScreen()),
                   (r) => false,
@@ -711,7 +711,7 @@ class _ProfilePageState extends State<ProfilePage> {
             _buildActionButton(
               icon: Icons.key,
               color: AppColors.primaryGreen,
-              label: getIt<GeminiService>().apiKey?.isNotEmpty == true
+              label: _userRepository.getGeminiApiKey()?.isNotEmpty == true
                   ? "API Key Set"
                   : "Set API Key",
               onTap: _setApiKey,

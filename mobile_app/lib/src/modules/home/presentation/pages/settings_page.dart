@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:mobile_app/src/core/data/remote/services/auth_service.dart';
-import 'package:mobile_app/src/core/data/remote/services/user_profile_service.dart';
-import 'package:mobile_app/src/core/data/remote/services/gemini_service.dart';
+import 'package:mobile_app/src/modules/home/domain/repository/user_repository.dart';
+import 'package:mobile_app/src/modules/auth/domain/repository/auth_repository.dart';
 import 'package:mobile_app/src/common/utils/getit_utils.dart';
 import 'package:mobile_app/src/core/theme/app_colors.dart';
 import 'package:mobile_app/src/modules/auth/presentation/login_screen.dart';
@@ -17,8 +16,8 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  final _profileService = UserProfileService();
-  final _authService = AuthService();
+  final _userRepository = getIt<UserRepository>();
+  final _authRepository = getIt<AuthRepository>();
   final _imagePicker = ImagePicker();
 
   String? _displayName;
@@ -34,8 +33,8 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _loadProfile() async {
     try {
-      final name = await _profileService.getDisplayName();
-      final photo = await _profileService.getPhotoUrl();
+      final name = await _userRepository.getDisplayName();
+      final photo = await _userRepository.getPhotoUrl();
       final user = FirebaseAuth.instance.currentUser;
 
       setState(() {
@@ -75,7 +74,7 @@ class _SettingsPageState extends State<SettingsPage> {
       final url = await storageRef.getDownloadURL();
 
 
-      await _profileService.updatePhotoUrl(url);
+      await _userRepository.updatePhotoUrl(url);
 
       setState(() {
         _photoUrl = url;
@@ -133,7 +132,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
     if (result != null && result.isNotEmpty) {
       try {
-        await _profileService.updateDisplayName(result);
+        await _userRepository.updateDisplayName(result);
         setState(() => _displayName = result);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -159,7 +158,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _setApiKey() async {
-    final controller = TextEditingController(text: getIt<GeminiService>().apiKey ?? '');
+    final controller = TextEditingController(text: _userRepository.getGeminiApiKey() ?? '');
 
     final result = await showDialog<String>(
       context: context,
@@ -198,7 +197,7 @@ class _SettingsPageState extends State<SettingsPage> {
     );
 
     if (result != null) {
-      getIt<GeminiService>().setApiKey(result);
+      _userRepository.setGeminiApiKey(result);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -232,7 +231,7 @@ class _SettingsPageState extends State<SettingsPage> {
     );
 
     if (confirm == true) {
-      await _authService.signOut();
+      await _authRepository.signOut();
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (_) => const LoginScreen()),
@@ -265,7 +264,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
     if (confirm == true) {
       try {
-        await _authService.deleteAccount();
+        await _authRepository.deleteAccount();
         if (mounted) {
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(builder: (_) => const LoginScreen()),

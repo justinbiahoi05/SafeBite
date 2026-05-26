@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/theme/app_colors.dart';
-import 'package:mobile_app/src/core/data/remote/services/scan_history_service.dart';
+import 'package:mobile_app/src/modules/home/domain/repository/scan_repository.dart';
 import 'package:mobile_app/src/core/data/remote/services/health_logic.dart';
 import 'package:mobile_app/src/common/utils/getit_utils.dart';
 
@@ -20,7 +20,7 @@ class ArchivePage extends StatelessWidget {
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
       ),
       body: StreamBuilder<QuerySnapshot>(
-        stream: getIt<ScanHistoryService>().getScans(),
+        stream: getIt<ScanRepository>().getScans(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator(color: AppColors.primaryGreen));
@@ -87,7 +87,7 @@ class ArchivePage extends StatelessWidget {
                                 subtitle: Text("${date.day}/${date.month}/${date.year} - ${date.hour}:${date.minute.toString().padLeft(2, '0')}", style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                                 trailing: IconButton(
                                   icon: const Icon(Icons.delete_outline, color: Colors.grey),
-                                  onPressed: () => getIt<ScanHistoryService>().deleteScan(doc.id),
+                                  onPressed: () => getIt<ScanRepository>().deleteScan(doc.id),
                                 ),
                               ),
                             ],

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mobile_app/src/core/theme/app_colors.dart';
-import 'package:mobile_app/src/core/data/remote/services/auth_service.dart';
+import 'package:mobile_app/src/modules/auth/domain/repository/auth_repository.dart';
+import 'package:mobile_app/src/common/utils/getit_utils.dart';
 import 'component/auth_text_field.dart';
 import 'component/auth_button.dart';
 import 'component/auth_header.dart';
@@ -47,7 +48,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
 
     try {
-      await AuthService().signUpWithEmail(
+      await getIt<AuthRepository>().signUpWithEmail(
         _emailController.text.trim(),
         _passwordController.text,
         displayName: _nameController.text.trim(),
