@@ -117,13 +117,19 @@ class _ScanResultPageState extends State<ScanResultPage> {
           healthConditions: _userConditions,
         );
 
-        if (advice != null) {
-          _showGroqAdviceDialog(advice);
-        }
+        // if (advice != null) {
+        //   _showGroqAdviceDialog(advice);
+        // }
       } else {
-        for (var item in cleanIngredients) {
-          final pred = _ai.predict(item);
-          temp.add({'name': item, 'label': pred['label'] ?? 'unknown'});
+        final offlineIngredients = _textController.text
+            .split(RegExp(r'[;,\n]'))
+            .map((ingredient) => ingredient.toLowerCase().trim())
+            .where((ingredient) => ingredient.isNotEmpty)
+            .toList();
+
+        for (var ingredient in offlineIngredients) {
+          final pred = _ai.predict(ingredient);
+          temp.add({'name': ingredient, 'label': pred['label'] ?? 'unknown'});
         }
       }
 
@@ -150,50 +156,50 @@ class _ScanResultPageState extends State<ScanResultPage> {
     }
   }
 
-  void _showGroqAdviceDialog(String advice) {
-    if (!mounted) return;
-    showDialog(
-      context: context,
-      builder: (c) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(
-          children: [
-            Icon(Icons.health_and_safety, color: AppColors.primaryGreen),
-            SizedBox(width: 10),
-            Text(
-              "Health Advice",
-              style: TextStyle(
-                color: Color(0xFF1E1E1E),
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-        content: Text(
-          advice,
-          style: const TextStyle(
-            color: Color(0xFF1E1E1E),
-            height: 1.6,
-            fontSize: 15,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(c),
-            child: const Text(
-              "I UNDERSTAND",
-              style: TextStyle(
-                color: AppColors.primaryGreen,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // void _showGroqAdviceDialog(String advice) {
+  //   if (!mounted) return;
+  //   showDialog(
+  //     context: context,
+  //     builder: (c) => AlertDialog(
+  //       backgroundColor: Colors.white,
+  //       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+  //       title: const Row(
+  //         children: [
+  //           Icon(Icons.health_and_safety, color: AppColors.primaryGreen),
+  //           SizedBox(width: 10),
+  //           Text(
+  //             "Health Advice",
+  //             style: TextStyle(
+  //               color: Color(0xFF1E1E1E),
+  //               fontSize: 18,
+  //               fontWeight: FontWeight.bold,
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //       content: Text(
+  //         advice,
+  //         style: const TextStyle(
+  //           color: Color(0xFF1E1E1E),
+  //           height: 1.6,
+  //           fontSize: 15,
+  //         ),
+  //       ),
+  //       actions: [
+  //         TextButton(
+  //           onPressed: () => Navigator.pop(c),
+  //           child: const Text(
+  //             "I UNDERSTAND",
+  //             style: TextStyle(
+  //               color: AppColors.primaryGreen,
+  //               fontWeight: FontWeight.bold,
+  //             ),
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   void _playDangerAlert() async {
     for (int i = 0; i < 5; i++) {
@@ -204,52 +210,53 @@ class _ScanResultPageState extends State<ScanResultPage> {
   }
 
   Future<void> _saveToCloud() async {
-  if (_isSaving) return;
+    if (_isSaving) return;
 
-  setState(() {
-    _isSaving = true;
-  });
+    setState(() {
+      _isSaving = true;
+    });
 
-  // 👇 QUAN TRỌNG: cho Flutter 1 frame để vẽ spinner
-  await Future.delayed(const Duration(milliseconds: 50));
+    // 👇 QUAN TRỌNG: cho Flutter 1 frame để vẽ spinner
+    await Future.delayed(const Duration(milliseconds: 50));
 
-  try {
-    String? imageUrl;
-    if (widget.capturedImageFile != null) {
-      imageUrl =
-          await StorageService.uploadScanImage(widget.capturedImageFile!);
-    }
+    try {
+      String? imageUrl;
+      if (widget.capturedImageFile != null) {
+        imageUrl = await StorageService.uploadScanImage(
+          widget.capturedImageFile!,
+        );
+      }
 
-    final ingredientPredictions = <String, String>{};
-    for (var item in _analyzedResults) {
-      ingredientPredictions[item['name']!] = item['label']!;
-    }
+      final ingredientPredictions = <String, String>{};
+      for (var item in _analyzedResults) {
+        ingredientPredictions[item['name']!] = item['label']!;
+      }
 
-    await ScanHistoryService().addScan(
-      result: _hasDanger ? 'caution' : 'safe',
-      confidence: 0.99,
-      ingredients: _analyzedResults.map((e) => e['name']!).toList(),
-      ingredientPredictions: ingredientPredictions,
-      imageUrl: imageUrl,
-      productName: _nameController.text,
-    );
+      await ScanHistoryService().addScan(
+        result: _hasDanger ? 'caution' : 'safe',
+        confidence: 0.99,
+        ingredients: _analyzedResults.map((e) => e['name']!).toList(),
+        ingredientPredictions: ingredientPredictions,
+        imageUrl: imageUrl,
+        productName: _nameController.text,
+      );
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Saved to History!"),
-        backgroundColor: AppColors.primaryGreen,
-      ),
-    );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Saved to History!"),
+          backgroundColor: AppColors.primaryGreen,
+        ),
+      );
 
-    Navigator.pop(context);
-  } catch (e) {
-    if (mounted) {
-      setState(() => _isSaving = false);
+      Navigator.pop(context);
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
     }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -567,7 +574,7 @@ class _ScanResultPageState extends State<ScanResultPage> {
                       ),
                     ],
                   ),
-          )
+          ),
         ),
       ],
     );
@@ -597,23 +604,59 @@ class _ScanResultPageState extends State<ScanResultPage> {
   Map<String, dynamic> _getCategoryInfo(String label) {
     switch (label.toLowerCase()) {
       case 'sugar':
-        return {'name': 'SUGAR', 'color': Colors.orange.shade100, 'textColor': Colors.orange.shade800};
+        return {
+          'name': 'SUGAR',
+          'color': Colors.orange.shade100,
+          'textColor': Colors.orange.shade800,
+        };
       case 'sweetener':
-        return {'name': 'SWEETENER', 'color': Colors.pink.shade100, 'textColor': Colors.pink.shade800};
+        return {
+          'name': 'SWEETENER',
+          'color': Colors.pink.shade100,
+          'textColor': Colors.pink.shade800,
+        };
       case 'sodium':
-        return {'name': 'SODIUM', 'color': Colors.blue.shade100, 'textColor': Colors.blue.shade800};
+        return {
+          'name': 'SODIUM',
+          'color': Colors.blue.shade100,
+          'textColor': Colors.blue.shade800,
+        };
       case 'allergen':
-        return {'name': 'ALLERGEN', 'color': Colors.red.shade100, 'textColor': Colors.red.shade800};
+        return {
+          'name': 'ALLERGEN',
+          'color': Colors.red.shade100,
+          'textColor': Colors.red.shade800,
+        };
       case 'bad_fat':
-        return {'name': 'BAD FAT', 'color': Colors.yellow.shade100, 'textColor': Colors.yellow.shade800};
+        return {
+          'name': 'BAD FAT',
+          'color': Colors.yellow.shade100,
+          'textColor': Colors.yellow.shade800,
+        };
       case 'acidic':
-        return {'name': 'ACIDIC', 'color': Colors.purple.shade100, 'textColor': Colors.purple.shade800};
+        return {
+          'name': 'ACIDIC',
+          'color': Colors.purple.shade100,
+          'textColor': Colors.purple.shade800,
+        };
       case 'additive':
-        return {'name': 'ADDITIVE', 'color': Colors.grey.shade200, 'textColor': Colors.grey.shade700};
+        return {
+          'name': 'ADDITIVE',
+          'color': Colors.grey.shade200,
+          'textColor': Colors.grey.shade700,
+        };
       case 'spicy':
-        return {'name': 'SPICY', 'color': Colors.red.shade100, 'textColor': Colors.red.shade800};
+        return {
+          'name': 'SPICY',
+          'color': Colors.red.shade100,
+          'textColor': Colors.red.shade800,
+        };
       default:
-        return {'name': 'SAFE', 'color': AppColors.primaryGreen.withOpacity(0.1), 'textColor': AppColors.primaryGreen};
+        return {
+          'name': 'SAFE',
+          'color': AppColors.primaryGreen.withOpacity(0.1),
+          'textColor': AppColors.primaryGreen,
+        };
     }
   }
 }

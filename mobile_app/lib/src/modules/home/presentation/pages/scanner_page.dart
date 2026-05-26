@@ -4,7 +4,18 @@ import 'package:camera/camera.dart';
 import 'package:image_picker/image_picker.dart';
 import 'scan_result_page.dart';
 import '../../../../../services/groq_service.dart';
+import '../../../../../services/network_service.dart';
+import '../../../../../services/ocr_service.dart';
 import '../../../../core/theme/app_colors.dart';
+
+Rect getStandardScanRect(Size screenSize) {
+  return Rect.fromLTWH(
+    screenSize.width * 0.05,
+    screenSize.height * 0.25,
+    screenSize.width * 0.9,
+    screenSize.height * 0.35,
+  );
+}
 
 class ScannerPage extends StatefulWidget {
   const ScannerPage({super.key});
@@ -99,7 +110,36 @@ class _ScannerPageState extends State<ScannerPage> {
     setState(() {
       _capturedImageFile = imageFile;
     });
+
+    final screenSize = MediaQuery.of(context).size;
+    final scanWindow = getStandardScanRect(screenSize);
+
     try {
+      final rawText = await OCRService.recognizeTextInFrame(
+        imageFile,
+        scanWindow,
+        screenSize,
+      );
+      print('DEBUG: OCR rawText: $rawText');
+
+      final hasInternet = await NetworkService().hasInternet();
+
+      if (!hasInternet) {
+        if (!mounted) return;
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) =>
+                ScanResultPage(rawText: rawText, capturedImageFile: imageFile),
+          ),
+        ).then((_) {
+          _hasNavigated = false;
+          setState(() => _isProcessing = false);
+        });
+        return;
+      }
+
       final resultJson = await GroqService.extractIngredients(
         XFile(imageFile.path),
       );
@@ -153,8 +193,13 @@ class _ScannerPageState extends State<ScannerPage> {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          if (_controller != null && _controller!.value.isInitialized)
-            Positioned.fill(child: CameraPreview(_controller!)),
+          // Trong ScannerPage.dart
+            if (_controller != null && _controller!.value.isInitialized)
+              Positioned.fill(
+                child: Center( // Thêm Center ở đây để đồng bộ tọa độ với OCRService
+                  child: CameraPreview(_controller!),
+                ),
+              ),
 
           Container(
             decoration: ShapeDecoration(
@@ -289,14 +334,7 @@ class _ScannerOverlayShape extends ShapeBorder {
       Path()..addRect(rect);
   @override
   void paint(Canvas canvas, Rect rect, {TextDirection? textDirection}) {
-    final width = rect.width;
-    final height = rect.height;
-
-    final holeRect = Rect.fromCenter(
-      center: Offset(width / 2, height / 2 - 20),
-      width: width * 0.9,
-      height: height * 0.5,
-    );
+    final holeRect = getStandardScanRect(rect.size);
 
     final path = Path()
       ..addRect(rect)

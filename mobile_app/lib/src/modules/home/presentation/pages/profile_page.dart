@@ -706,15 +706,6 @@ class _ProfilePageState extends State<ProfilePage> {
                 );
               },
             ),
-            const SizedBox(height: 12),
-            _buildActionButton(
-              icon: Icons.key,
-              color: AppColors.primaryGreen,
-              label: GeminiService.apiKey?.isNotEmpty == true
-                  ? "API Key Set"
-                  : "Set API Key",
-              onTap: _setApiKey,
-            ),
             const SizedBox(height: 100),
           ],
         ),

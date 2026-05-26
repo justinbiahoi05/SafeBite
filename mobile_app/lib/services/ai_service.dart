@@ -9,7 +9,7 @@ class AIService {
   Interpreter? _interpreter;
   Map<String, dynamic>? _vocab;
   List<String>? _labels;
-  final int _maxLength = 8; // Phải khớp với tham số lúc train model
+  final int _maxLength = 20; // Tăng độ dài tối đa để xử lý nguyên liệu dài hơn
   bool _isInitialized = false;
 
   // Private constructor
@@ -109,28 +109,28 @@ class AIService {
 
   /// Hàm biến đổi văn bản thành dãy số (Vectorization)
   List<double> _tokenize(String text) {
-    // Chuẩn hóa: viết thường và xóa ký tự lạ
-    String cleanText = text.toLowerCase().replaceAll(RegExp(r'[^\w\s]'), ' ');
+    // Chuẩn hóa: viết thường và xóa ký tự đặc biệt, số và các ký tự lạ khi OCR đọc sai
+    final cleanText = text
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-zA-Z\u00C0-\u017F\s]'), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
 
-    // Cắt chuỗi thành danh sách từ
-    List<String> words = cleanText.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+    if (cleanText.isEmpty) {
+      return List<double>.filled(_maxLength, 0.0);
+    }
 
-    List<double> sequence = [];
+    final words = cleanText.split(' ').where((w) => w.isNotEmpty).toList();
+    final sequence = <double>[];
 
-    for (var word in words) {
-      // Lấy ID từ vocab, nếu không có thì dùng ID 1 (thường là mã của <OOV> - Out Of Vocabulary)
+    for (final word in words) {
       sequence.add((_vocab![word] ?? 1).toDouble());
     }
 
-    // Padding & Truncating: Đảm bảo độ dài luôn bằng _maxLength (8)
     if (sequence.length < _maxLength) {
-      // Thiếu thì bù số 0 vào cuối
-      while (sequence.length < _maxLength) {
-        sequence.add(0.0);
-      }
-    } else {
-      // Thừa thì cắt bớt
-      sequence = sequence.sublist(0, _maxLength);
+      sequence.addAll(List<double>.filled(_maxLength - sequence.length, 0.0));
+    } else if (sequence.length > _maxLength) {
+      return sequence.sublist(0, _maxLength);
     }
 
     return sequence;
