@@ -170,64 +170,6 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Future<void> _setApiKey() async {
-    final controller = TextEditingController(text: _userRepository.getGeminiApiKey() ?? '');
-    final result = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
-        title: const Text(
-          "Gemini API Key",
-          style: TextStyle(color: AppColors.textPrimary),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Enter your Google Gemini API key for cloud-based analysis.',
-              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: controller,
-              decoration: const InputDecoration(
-                labelText: 'API Key',
-                border: OutlineInputBorder(),
-                hintText: 'AIza...',
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, controller.text),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryGreen,
-            ),
-            child: const Text('Save', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
-
-    if (result != null) {
-      _userRepository.setGeminiApiKey(result);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('API key saved!'),
-            backgroundColor: AppColors.primaryGreen,
-          ),
-        );
-      }
-    }
-    controller.dispose();
-  }
-
   ImageProvider? _getAvatarImage() {
     if (_photoData == null) return null;
     if (_photoData!.startsWith('http')) return NetworkImage(_photoData!);
@@ -316,15 +258,6 @@ class _ProfilePageState extends State<ProfilePage> {
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 children: [
-                  _buildSettingTile(
-                    icon: Icons.key,
-                    iconColor: Colors.purple,
-                    title: "Gemini API Key",
-                    subtitle: _userRepository.getGeminiApiKey()?.isNotEmpty == true
-                        ? "API key configured"
-                        : "Not set",
-                    onTap: _setApiKey,
-                  ),
                   _buildSettingTile(
                     icon: Icons.info_outline,
                     iconColor: Colors.blue,
@@ -753,15 +686,6 @@ class _ProfilePageState extends State<ProfilePage> {
                   (r) => false,
                 );
               },
-            ),
-            const SizedBox(height: 12),
-            _buildActionButton(
-              icon: Icons.key,
-              color: AppColors.primaryGreen,
-              label: _userRepository.getGeminiApiKey()?.isNotEmpty == true
-                  ? "API Key Set"
-                  : "Set API Key",
-              onTap: _setApiKey,
             ),
             const SizedBox(height: 100),
           ],
