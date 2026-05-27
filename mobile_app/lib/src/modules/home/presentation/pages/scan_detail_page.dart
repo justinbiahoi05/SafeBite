@@ -20,7 +20,7 @@ class ScanDetailPage extends StatelessWidget {
   Future<void> _showImagePreview(BuildContext context, String imageUrl, String heroTag) async {
     await showDialog(
       context: context,
-      barrierColor: Colors.black.withOpacity(0.85),
+      barrierColor: Colors.black.withValues(alpha: 0.85),
       builder: (_) {
         return Dialog(
           backgroundColor: Colors.transparent,
@@ -76,7 +76,7 @@ class ScanDetailPage extends StatelessWidget {
               icon: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(Icons.arrow_back, color: Colors.white),
@@ -102,7 +102,7 @@ class ScanDetailPage extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
@@ -413,7 +413,7 @@ class ScanDetailPage extends StatelessWidget {
       case 'spicy':
         return {'name': 'SPICY', 'color': Colors.red.shade100, 'textColor': Colors.red.shade800};
       default:
-        return {'name': 'SAFE', 'color': AppColors.primaryGreen.withOpacity(0.1), 'textColor': AppColors.primaryGreen};
+        return {'name': 'SAFE', 'color': AppColors.primaryGreen.withValues(alpha: 0.1), 'textColor': AppColors.primaryGreen};
     }
   }
 
@@ -480,7 +480,7 @@ class ScanDetailPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
           ),
         ],
@@ -495,7 +495,7 @@ class ScanDetailPage extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: AppColors.primaryGreen.withOpacity(0.1),
+            color: AppColors.primaryGreen.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(icon, color: AppColors.primaryGreen, size: 20),
@@ -526,16 +526,16 @@ class ScanDetailPage extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.orange.withOpacity(0.1),
+        color: Colors.orange.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.orange.withOpacity(0.3)),
+        border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.orange.withOpacity(0.2),
+              color: Colors.orange.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 24),
