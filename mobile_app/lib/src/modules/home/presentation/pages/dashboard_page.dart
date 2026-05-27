@@ -4,7 +4,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/theme/app_colors.dart';
 import 'package:mobile_app/src/modules/home/domain/repository/scan_repository.dart';
 import 'package:mobile_app/src/common/utils/getit_utils.dart';
-import 'archive_page.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -88,7 +87,7 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(color: AppColors.primaryGreen.withOpacity(0.15), borderRadius: BorderRadius.circular(100)),
+      decoration: BoxDecoration(color: AppColors.primaryGreen.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(100)),
       child: const Text('DAILY REPORT', style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1.0)),
     );
   }
@@ -108,12 +107,6 @@ class _DashboardPageState extends State<DashboardPage> {
       ],
     );
   }
-
-  String _formatTime(dynamic timestamp) {
-    if (timestamp == null) return 'Just now';
-    DateTime date = (timestamp as Timestamp).toDate();
-    return "${date.hour}:${date.minute.toString().padLeft(2, '0')}";
-  }
 }
 
 class _SafetyScoreCard extends StatelessWidget {
@@ -127,7 +120,7 @@ class _SafetyScoreCard extends StatelessWidget {
     final status = score >= 80 ? 'Excellent' : score >= 50 ? 'Good' : 'Needs Work';
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)]),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)]),
       child: Row(
         children: [
           CircleAvatar(radius: 25, backgroundColor: AppColors.primaryGreen, child: Text('$score', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 18))),
@@ -151,7 +144,7 @@ class _IngredientsAnalyzedCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity, padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)]),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)]),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -178,7 +171,7 @@ class _StatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)]),
+      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)]),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -192,26 +185,4 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-class _RecentScanItem extends StatelessWidget {
-  final String name;
-  final String time;
-  final String tag;
-  final bool isSafe;
-  const _RecentScanItem({required this.name, required this.time, required this.tag, required this.isSafe});
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12), padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)]),
-      child: Row(
-        children: [
-          Icon(isSafe ? Icons.check_circle : Icons.warning, color: isSafe ? AppColors.primaryGreen : Colors.redAccent),
-          const SizedBox(width: 16),
-          Expanded(child: Text(name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.textPrimary), maxLines: 1, overflow: TextOverflow.ellipsis)),
-          Text('$time • $tag', style: const TextStyle(color: AppColors.textSecondary, fontSize: 11)),
-        ],
-      ),
-    );
-  }
-}
