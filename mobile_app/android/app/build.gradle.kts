@@ -1,12 +1,13 @@
 plugins {
     id("com.android.application")
+    id("org.jetbrains.kotlin.android")
     id("com.google.gms.google-services")
     id("dev.flutter.flutter-gradle-plugin")
 }
 
 android {
     namespace = "com.example.mobile_app"
-    compileSdk = 36 
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -14,8 +15,8 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlin {
-        jvmToolchain(17)
+    kotlinOptions {
+        jvmTarget = "17"
     }
 
     defaultConfig {
@@ -26,14 +27,19 @@ android {
         versionName = flutter.versionName
     }
 
-    packagingOptions {
+    packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
-        pickFirst("lib/x86_64/libtensorflowlite_jni.so")
-        pickFirst("lib/armeabi-v7a/libtensorflowlite_jni.so")
-        pickFirst("lib/arm64-v8a/libtensorflowlite_jni.so")
-        pickFirst("lib/x86/libtensorflowlite_jni.so")
+
+        jniLibs {
+            pickFirsts += setOf(
+                "lib/x86_64/libtensorflowlite_jni.so",
+                "lib/armeabi-v7a/libtensorflowlite_jni.so",
+                "lib/arm64-v8a/libtensorflowlite_jni.so",
+                "lib/x86/libtensorflowlite_jni.so"
+            )
+        }
     }
 
     buildTypes {

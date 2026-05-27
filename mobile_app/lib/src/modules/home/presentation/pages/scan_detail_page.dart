@@ -17,11 +17,51 @@ class ScanDetailPage extends StatelessWidget {
     }
   }
 
+  Future<void> _showImagePreview(BuildContext context, String imageUrl, String heroTag) async {
+    await showDialog(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.85),
+      builder: (_) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: EdgeInsets.zero,
+          child: GestureDetector(
+            onTap: () => Navigator.of(context).pop(),
+            child: Center(
+              child: Hero(
+                tag: heroTag,
+                child: InteractiveViewer(
+                  maxScale: 5,
+                  minScale: 1,
+                  boundaryMargin: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                  child: CachedNetworkImage(
+                    imageUrl: imageUrl,
+                    fit: BoxFit.contain,
+                    placeholder: (context, url) => Container(
+                      color: Colors.black12,
+                      child: const Center(child: CircularProgressIndicator()),
+                    ),
+                    errorWidget: (context, url, error) => Container(
+                      color: Colors.black12,
+                      padding: const EdgeInsets.all(24),
+                      child: const Icon(Icons.error, color: Colors.white, size: 48),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isSafe = _getField<String>('result') == 'safe';
     final DateTime date = (_getField<Timestamp>('createdAt'))?.toDate() ?? DateTime.now();
     final imageUrl = _getField<String>('imageUrl');
+    final imageHeroTag = 'scan-image-${scan.id}';
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackgroundLight,
@@ -141,22 +181,32 @@ class ScanDetailPage extends StatelessWidget {
                           const SizedBox(height: 12),
                           ClipRRect(
                             borderRadius: BorderRadius.circular(12),
-                            child: CachedNetworkImage(
-                              imageUrl: imageUrl,
-                              height: 200,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                              placeholder: (context, url) => Container(
-                                height: 200,
-                                color: Colors.grey.shade200,
-                                child: const Center(
-                                  child: CircularProgressIndicator(),
+                            child: GestureDetector(
+                              onTap: () {
+                                if (imageUrl.isNotEmpty) {
+                                  _showImagePreview(context, imageUrl, imageHeroTag);
+                                }
+                              },
+                              child: Hero(
+                                tag: imageHeroTag,
+                                child: CachedNetworkImage(
+                                  imageUrl: imageUrl,
+                                  height: 200,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                  placeholder: (context, url) => Container(
+                                    height: 200,
+                                    color: Colors.grey.shade200,
+                                    child: const Center(
+                                      child: CircularProgressIndicator(),
+                                    ),
+                                  ),
+                                  errorWidget: (context, url, error) => Container(
+                                    height: 200,
+                                    color: Colors.grey.shade200,
+                                    child: const Icon(Icons.error),
+                                  ),
                                 ),
-                              ),
-                              errorWidget: (context, url, error) => Container(
-                                height: 200,
-                                color: Colors.grey.shade200,
-                                child: const Icon(Icons.error),
                               ),
                             ),
                           ),

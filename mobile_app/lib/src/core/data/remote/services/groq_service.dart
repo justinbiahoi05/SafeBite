@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:camera/camera.dart';
-import 'package:mobile_app/src/core/data/remote/services/secrets.dart';
+
 
 import 'package:injectable/injectable.dart';
 
