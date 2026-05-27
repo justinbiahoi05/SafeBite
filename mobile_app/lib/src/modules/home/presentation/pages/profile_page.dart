@@ -237,6 +237,39 @@ class _ProfilePageState extends State<ProfilePage> {
       return null;
     }
   }
+  Future<void> _showAvatarPreview() async {
+    final avatarImage = _getAvatarImage();
+    if (avatarImage == null) return;
+
+    await showDialog(
+      context: context,
+      barrierColor: Colors.black87,
+      builder: (_) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: EdgeInsets.zero,
+          child: GestureDetector(
+            onTap: () => Navigator.of(context).pop(),
+            child: Center(
+              child: Hero(
+                tag: 'profile-avatar',
+                child: InteractiveViewer(
+                  maxScale: 5,
+                  minScale: 1,
+                  boundaryMargin: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                  child: Image(
+                    image: avatarImage,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
 
   void _showSettings() {
     showModalBottomSheet(
@@ -442,7 +475,15 @@ class _ProfilePageState extends State<ProfilePage> {
                 children: [
 
                   GestureDetector(
-                    onTap: _isUploading ? null : _changePhoto,
+                    onTap: _isUploading
+                        ? null
+                        : () {
+                            if (_getAvatarImage() != null) {
+                              _showAvatarPreview();
+                            } else {
+                              _changePhoto();
+                            }
+                          },
                     child: Stack(
                       children: [
                         Container(
@@ -451,17 +492,20 @@ class _ProfilePageState extends State<ProfilePage> {
                             shape: BoxShape.circle,
                             color: AppColors.primaryGreen,
                           ),
-                          child: CircleAvatar(
-                            radius: 50,
-                            backgroundColor: Colors.white,
-                            backgroundImage: _getAvatarImage(),
-                            child: _photoData == null
-                                ? const Icon(
-                                    Icons.person,
-                                    size: 40,
-                                    color: AppColors.textSecondary,
-                                  )
-                                : null,
+                          child: Hero(
+                            tag: 'profile-avatar',
+                            child: CircleAvatar(
+                              radius: 50,
+                              backgroundColor: Colors.white,
+                              backgroundImage: _getAvatarImage(),
+                              child: _photoData == null
+                                  ? const Icon(
+                                      Icons.person,
+                                      size: 40,
+                                      color: AppColors.textSecondary,
+                                    )
+                                  : null,
+                            ),
                           ),
                         ),
                         if (_isUploading)
@@ -476,16 +520,19 @@ class _ProfilePageState extends State<ProfilePage> {
                         Positioned(
                           right: 0,
                           bottom: 0,
-                          child: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: const BoxDecoration(
-                              color: AppColors.primaryGreen,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.camera_alt,
-                              color: Colors.white,
-                              size: 16,
+                          child: GestureDetector(
+                            onTap: _isUploading ? null : _changePhoto,
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: const BoxDecoration(
+                                color: AppColors.primaryGreen,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.camera_alt,
+                                color: Colors.white,
+                                size: 16,
+                              ),
                             ),
                           ),
                         ),
